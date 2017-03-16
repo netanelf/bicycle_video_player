@@ -34,6 +34,10 @@ class BicyclePlayer(threading.Thread):
         self.logger.info('openCV version: {}'.format(cv2.__version__))
         if cv2.__version__ > '2.4.9.1':
             self.frame_rate = self.video_capturer.get(cv2.CAP_PROP_FPS)
+            x_resolution = self.video_capturer.get(cv2.CAP_PROP_FRAME_WIDTH)
+            y_resolution = self.video_capturer.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            self.video_resolution = [x_resolution, y_resolution]
+            self.logger.info('video resolution: {}'.format(self.video_resolution))
         else:
             self.frame_rate = self.video_capturer.get(cv2.cv.CV_CAP_PROP_FPS)
             x_resolution = self.video_capturer.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
@@ -51,7 +55,11 @@ class BicyclePlayer(threading.Thread):
         start_play_time = time.time()
 
         cv2.namedWindow('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN)
-        cv2.setWindowProperty('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
+
+        if cv2.__version__ > '2.4.9.1':
+            cv2.setWindowProperty('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        else:
+            cv2.setWindowProperty('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
         while (self.video_capturer.isOpened()) and (self.should_run is True):
 
             while self.paused:
@@ -201,25 +209,24 @@ def init_logging(logger_name, logger_level):
 
 if __name__ == '__main__':
     init_logging(logger_name='bicyclePlayer', logger_level=logging.DEBUG)
-    f = 'GoPro_BMX_Bike_Riding_in_NYC_4.mp4'
-    image = cv2.imread("mushroom.jpeg")
+    f = 'movie.mp4'
+    image = cv2.imread("icon.png")
     #image = cv2.imread("1.jpeg")
     #f = 'V70309-235541.mp4'
     player = BicyclePlayer(input_file=f)
     player.setDaemon(True)
     player.start()
-    time.sleep(5)
-    player.overlay_image(image=image, location=[10, 10], weight_transparency=0.5)
+    time.sleep(10)
+    player.overlay_image(image=image, location=[50, 50], weight_transparency=0.5)
 
     player.ramp_speed(start_speed=3, stop_speed=0.2, ramp_time=timedelta(seconds=30))
-    player.set_speed(speed=2)
-    time.sleep(20)
-    player.set_speed(speed=0.5)
-    time.sleep(20)
-
-    time.sleep(10)
     player.disable_overlay()
-    time.sleep(5)
+    player.set_speed(speed=2)
+    time.sleep(10)
+    player.set_speed(speed=0.5)
+    time.sleep(10)
+    player.set_speed(speed=1)
+    time.sleep(10)
     player.stop_playing()
     time.sleep(5)
 
