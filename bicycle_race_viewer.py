@@ -17,16 +17,20 @@ class BicycleRaceViewer(threading.Thread):
         self._target_velocity = {'player1': 0, 'player2': 0}
 
         # images decelerations
-        self.base_image_dir = 'race_viewer_images'
+        self.base_image_dir = 'bicycle_race_sample_pics'
         self.background_img = path.join(self.base_image_dir, 'background.png')
-        self.velocity_bicycle_icon_img = path.join(self.base_image_dir, 'png_icon.png')
-        self.other_img = path.join(self.base_image_dir, '1')
+        self.velocity_bicycle_icon_img = path.join(self.base_image_dir, 'bicycle_icon.png')
+        self.other_img = path.join(self.base_image_dir, '1')  # demo of un-found image
 
         # hold all images (icons, background etc.)
         self.images_structures = {}
 
         # hold the image that will be displayed on screen
         self.displayed_image = None
+
+        # absolute placements for all kind of things
+        self.player_1_bicycle_icon_x = 150
+        self.player_2_bicycle_icon_x = 300
 
         self._read_all_images()
 
@@ -63,8 +67,13 @@ class BicycleRaceViewer(threading.Thread):
         self._logger.info('finished reading all images into cv objects')
 
     def update_velocity(self, player, new_velocity):
-        #update target velocity
-        pass
+        """
+        should be used by controller
+        :param player: player1/ player2
+        :param new_velocity: new velocity value
+        :return:
+        """
+        self._velocity[player] = new_velocity
 
     def _overlay(self, base_image, overlay_image, location):
         """
@@ -105,14 +114,24 @@ class BicycleRaceViewer(threading.Thread):
         # update images for both players
         self._logger.debug('in _update_power_bar')
         for player, velocity in self._velocity.items():
-            if velocity > 3:
-                pass
-            elif velocity > 2:
-                pass
-            elif velocity > 1:
-                pass
+            if player == 'player1':
+                x_loc = self.player_1_bicycle_icon_x
             else:
-                self.displayed_image = self._overlay(base_image=self.displayed_image, overlay_image=self.images_structures['velocity_bicycle_icon_img'], location=(20, 50))
+                x_loc = self.player_2_bicycle_icon_x
+
+            # TODO: 3,2,1,0 should be settings and not defined here...
+            if velocity > 3:
+                self._logger.debug('velocity > 3')
+                self.displayed_image = self._overlay(base_image=self.displayed_image, overlay_image=self.images_structures['velocity_bicycle_icon_img'], location=(x_loc, 400))
+            elif velocity > 2:
+                self._logger.debug('velocity > 2')
+                self.displayed_image = self._overlay(base_image=self.displayed_image, overlay_image=self.images_structures['velocity_bicycle_icon_img'], location=(x_loc, 300))
+            elif velocity > 1:
+                self._logger.debug('velocity > 1')
+                self.displayed_image = self._overlay(base_image=self.displayed_image, overlay_image=self.images_structures['velocity_bicycle_icon_img'], location=(x_loc, 200))
+            else:
+                self._logger.debug('velocity > 0')
+                self.displayed_image = self._overlay(base_image=self.displayed_image, overlay_image=self.images_structures['velocity_bicycle_icon_img'], location=(x_loc, 50))
 
         self._update_power_bar_digits()
 
@@ -153,7 +172,7 @@ class BicycleRaceViewer(threading.Thread):
             cv2.setWindowProperty('display', cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
 
         while self._running:
-            self.displayed_image = self.images_structures['background_img']
+            self.displayed_image = np.copy(self.images_structures['background_img'])
             self._update_current_velocity()
 
             self._update_power_bar()
@@ -177,5 +196,7 @@ if __name__ == '__main__':
     b.setDaemon(True)
     b.start()
 
+    sleep(3)
+    b.update_velocity(player='player1', new_velocity=2.5)
     while b.is_alive():
         sleep(1)
