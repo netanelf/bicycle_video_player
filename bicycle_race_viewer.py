@@ -18,13 +18,15 @@ class BicycleRaceViewer(threading.Thread):
         self._target_velocity = {'player1': 0, 'player2': 0}
         self._last_velocity_update_time = 0
         self._velocity_update_delay_sec = 0.03  # update velocity resolution
-        self._velocity_update_delta_kms = 0.3  # 'kamash' step for velocity updates
+        self._velocity_update_delta_kms = 0.4  # 'kamash' step for velocity updates
 
         # images decelerations
         self._base_image_dir = 'bicycle_race_sample_pics'
 
         self.background_img = path.join(self._base_image_dir, 'background.png')
         self.velocity_bicycle_icon_img = path.join(self._base_image_dir, 'bicycle_icon.png')
+        self.velocity_bar_player_1_img = path.join(self._base_image_dir, 'bar_fill.png')
+        self.velocity_bar_player_2_img = path.join(self._base_image_dir, 'bar_fill.png')
         self.other_img = path.join(self._base_image_dir, '1')  # demo of un-found image
 
         # hold all images (icons, background etc.)
@@ -43,6 +45,10 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_bar_min_velocity = 0
         self._velocity_bar_max_velocity = 100
         self._velocity_bar_bicycle_icon_offset = -50  # ofset of bicycle icon from bar end
+        self._velocity_bar_player_1_location = (100, 50)
+        self._velocity_bar_player_2_location = (300, 50)
+        self._velocity_bar_gradient_steps = 30  # number of different opacity values in the gradient
+        self._velocity_bar_gradient_end = 0.3  # percentage of visible bar that will have a gradient effect
 
     def _read_all_images(self):
         """
@@ -161,10 +167,43 @@ class BicycleRaceViewer(threading.Thread):
 
     def _update_velocity_bar(self):
         # bar width + gradient
+        self._update_velocity_bar_width()
         # bicycle logo placement
         self._update_bicycle_logos_placements()
         # km"sh location update
         # digits update + location
+
+    def _update_velocity_bar_width(self):
+
+        for player, velocity in self._velocity.items():
+            if player == 'player1':
+                bar = self._images_structures['velocity_bar_player_1_img']
+                location = self._velocity_bar_player_1_location
+            else:
+                bar = self._images_structures['velocity_bar_player_2_img']
+                location = self._velocity_bar_player_2_location
+
+            # create a gradual alpha mask + width mask
+            bar_x, bar_y, bar_z = bar.shape
+            self._logger.debug('bar shape: ({}, {}, {})'.format(bar_x, bar_y, bar_z))
+
+            bar_stop_pixel = self._map_velocity_to_bar_location(velocity=velocity)
+
+            # mask out bar from bar_stop_pixel until the end
+            bar_alpha = np.ones((bar_x, bar_y), dtype=np.uint8) * 255
+            bar_alpha[:, bar_stop_pixel:] = 0
+
+            self._logger.debug('bar_alpha shape: {}'.format(bar_alpha.shape))
+            gradient_end = int(self._velocity_bar_gradient_end * bar_stop_pixel)
+            gradient_space_step = int(gradient_end / self._velocity_bar_gradient_steps)
+            gradient_alpha_step = int(255 / self._velocity_bar_gradient_steps)
+            for i in range(self._velocity_bar_gradient_steps):
+                bar_alpha[:, i*gradient_space_step: (i+1)*gradient_space_step] = i * gradient_alpha_step
+
+            masked_bar = np.dstack((bar, bar_alpha))
+
+            #overlay bar into background
+            self._displayed_image = self._overlay(base_image=self._displayed_image, overlay_image=masked_bar, location=location)
 
     def _map_velocity_to_bar_location(self, velocity):
         """
