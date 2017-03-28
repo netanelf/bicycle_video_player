@@ -1,3 +1,4 @@
+import fnmatch
 import threading
 import logging
 from time import sleep
@@ -5,6 +6,8 @@ import time
 from os import path
 import numpy as np
 import cv2
+import os
+import copy
 
 
 class BicycleRaceViewer(threading.Thread):
@@ -20,19 +23,13 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_update_delay_sec = 0.03  # update velocity resolution
         self._velocity_update_delta_kms = 0.4  # 'kamash' step for velocity updates
 
-        # images decelerations
-        self._base_image_dir = 'bicycle_race_sample_pics'
-
-        self.background_img = path.join(self._base_image_dir, 'background.png')
-        self.velocity_bicycle_icon_img = path.join(self._base_image_dir, 'bicycle_icon.png')
-        self.velocity_bar_player_1_img = path.join(self._base_image_dir, 'bar_fill.png')
-        self.velocity_bar_player_2_img = path.join(self._base_image_dir, 'bar_fill.png')
-        self.other_img = path.join(self._base_image_dir, '1')  # demo of un-found image
 
         # hold all images (icons, background etc.)
         self._images_structures = {}
+        self._read_all_images('bicycle_race_sample_pics')
 
-        self._read_all_images()
+        self._velocity_bar_player_1 = copy.deepcopy(self._images_structures['bar_fill'])
+        self._velocity_bar_player_2 = copy.deepcopy(self._images_structures['bar_fill'])
 
         # hold the image that will be displayed on screen
         self._displayed_image = None
@@ -50,37 +47,32 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_bar_gradient_steps = 30  # number of different opacity values in the gradient
         self._velocity_bar_gradient_end = 0.3  # percentage of visible bar that will have a gradient effect
 
-    def _read_all_images(self):
-        """
-        read all variables that have '_img' in their name into a dictionary (self.images_structures)
-        that will hold the actual images matrices
-        :return:
-        """
-        self._logger.info('in _read_all_images')
-        self._logger.info('openCV version: {}'.format(cv2.__version__))
 
-        images_names_vars = [v for v in vars(self) if '_img' in v]
-        self._logger.debug('read variable: {}'.format(images_names_vars))
-
-        for img_name in images_names_vars:
-            try:
-                self._images_structures[img_name] = cv2.imread(getattr(self, img_name), cv2.IMREAD_UNCHANGED)
-                if self._images_structures[img_name] is None:
-                    raise Exception('could not find img: {}'.format(img_name))
-
-            except Exception as ex:
-                self._logger.error('could not read img: {}, ex: {}'.format(img_name, ex))
+    # reads all images under a directory into _image_structures. Name convention to key is <root after dir_name>/<filename wo extention>
+    # for example if we call _read_all_images(bicycle_race_sample_pics) then bicycle_race_sample_pics/digits/0.png will
+    # be stored in _images_structures['digits/0']
+    def _read_all_images(self,dir_name):
+        for root, dirnames, filenames in os.walk(dir_name):
+            for filename in fnmatch.filter(filenames, '*.png'):
+                filename = os.path.join(root, filename)
+                entryname = filename[len(dir_name)+1:].replace('.png','').replace('\\','/')
+                try:
+                    self._images_structures[entryname] = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+                    if self._images_structures[entryname] is None:
+                        raise Exception('could not find img: {}'.format(filename))
+                    # self._logger.info('image loaded: {}, into _image_structures with key: {}'.format(filename,entryname))
+                except Exception as ex:
+                    self._logger.error('could not read img: {}, ex: {}'.format(filename, ex))
 
         # ensure background image is fully opaque (rgb with no alpha channel)
-        background = self._images_structures['background_img']
+        background = self._images_structures['background']
         (x_dim, y_dim, z_dim) = background.shape
-        self._logger.debug('background_img dimensions: {}'.format((x_dim, y_dim, z_dim)))
+        self._logger.debug('background dimensions: {}'.format((x_dim, y_dim, z_dim)))
         if z_dim == 4:
-            self._logger.error('background_img has 4 channels, removing alpha')
-            self._images_structures['background_img'] = background[:, :, 0:3]
-            self._logger.info('new dimension: {}'.format(self._images_structures['background_img'].shape))
+            self._logger.error('background has 4 channels, removing alpha')
+            self._images_structures['background'] = background[:, :, 0:3]
+            self._logger.info('new dimension: {}'.format(self._images_structures['background'].shape))
 
-        self._logger.info('finished reading all images into cv objects')
 
     def update_velocity(self, player, new_velocity):
         """
@@ -177,10 +169,10 @@ class BicycleRaceViewer(threading.Thread):
 
         for player, velocity in self._velocity.items():
             if player == 'player1':
-                bar = self._images_structures['velocity_bar_player_1_img']
+                bar = self._velocity_bar_player_1
                 location = self._velocity_bar_player_1_location
             else:
-                bar = self._images_structures['velocity_bar_player_2_img']
+                bar = self._velocity_bar_player_2
                 location = self._velocity_bar_player_2_location
 
             # create a gradual alpha mask + width mask
@@ -232,7 +224,7 @@ class BicycleRaceViewer(threading.Thread):
             y_bar_loc = self._map_velocity_to_bar_location(velocity=velocity)
             y_icon_loc = y_bar_loc + self._velocity_bar_bicycle_icon_offset
             self._displayed_image = self._overlay(base_image=self._displayed_image,
-                                                  overlay_image=self._images_structures['velocity_bicycle_icon_img'],
+                                                  overlay_image=self._images_structures['bicycle_icon'],
                                                   location=(x_loc, y_icon_loc))
 
     def run(self):
@@ -247,7 +239,7 @@ class BicycleRaceViewer(threading.Thread):
 
         while self._running:
             if self._target_velocity != self._velocity:
-                self._displayed_image = np.copy(self._images_structures['background_img'])
+                self._displayed_image = np.copy(self._images_structures['background'])
                 self._update_current_velocity()
 
                 self._update_power_bar()
