@@ -31,6 +31,10 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_bar_player_1 = copy.deepcopy(self._images_structures['bar_fill'])
         self._velocity_bar_player_2 = copy.deepcopy(self._images_structures['bar_fill'])
 
+        # usage example
+        # num = self._create_number_from_digits([3,2, 0],1)
+        # offset = self._calculate_digit_offset(num)
+
         # hold the image that will be displayed on screen
         self._displayed_image = None
 
@@ -149,13 +153,45 @@ class BicycleRaceViewer(threading.Thread):
         # if power > 100 change image location - ensure digits center
         pass
 
-    def _create_number_from_digits(self, digit_list):
+    # usage example
+    # num = self._create_number_from_digits([3,2, 0],1)
+    # offset = self._calculate_digit_offset(num)
+    def _create_number_from_digits(self, digit_list, scaling = 1):
         # paste digits one nexto another and return one image
-        return
+        max_h=0
+        total_w = 0
+        for digit in digit_list:
+            digit_img = self._images_structures["digits/" + str(digit)]
+            h,w= digit_img.shape[:2]
+            if h>max_h:
+                max_h = h
+            total_w = total_w + w
 
-    def _calculate_digit_offset(self, digit_list):
-        # calculate horizontal offset according to number of digits and digit width
-        return
+        num = np.zeros((max_h, total_w,3), np.uint8)
+        last_w = 0
+        for digit in digit_list:
+            digit_img = self._images_structures["digits/" + str(digit)]
+            h, w = digit_img.shape[:2]
+            num[:h, last_w:last_w + w] = digit_img
+            last_w = last_w + w
+            # num = cv2.cvtColor(num, cv2.COLOR_GRAY2BGR)
+
+        if scaling != 1:
+            num = cv2.resize(num, None, fx=scaling, fy=scaling, interpolation=cv2.INTER_CUBIC)
+
+        # for result testing
+        # cv2.imshow("test", num)
+        # cv2.waitKey()
+
+        return num
+
+    # usage example
+    # num = self._create_number_from_digits([3,2, 0],1)
+    # offset = self._calculate_digit_offset(num)
+    def _calculate_digit_offset(self, num):
+        # receives the concatenated image and returns the offset required to add in order to place its center
+        h,w = num.shape[:2]
+        return -h/2,-w/2
 
     def _update_velocity_bar(self):
         # bar width + gradient
