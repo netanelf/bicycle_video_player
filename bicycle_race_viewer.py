@@ -11,14 +11,23 @@ import copy
 
 
 class BicycleRaceViewer(threading.Thread):
+
+    SPEED_STATE_THRESHOLDS = [30,60,90]
+    POWER_DIGITS_SCALING = 0.8
+    POWER_BAR_LOCATION = [[400,100],[400,1000]]
+    POWER_BAR_DIGIT_OFFSET = [300,300]
+    PLAYER_1 = 0
+    PLAYER_2 = 1
+
+
     def __init__(self):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info('initializing {}'.format(self.__class__.__name__))
         super(BicycleRaceViewer, self).__init__()
         self._running = False
 
-        self._velocity = {'player1': 0.1, 'player2': 0.1}
-        self._target_velocity = {'player1': 0, 'player2': 0}
+        self._velocity = [0, 0] # player1,player2
+        self._target_velocity = [0, 0] # player1,player2
         self._last_velocity_update_time = 0
         self._velocity_update_delay_sec = 0.03  # update velocity resolution
         self._velocity_update_delta_kms = 0.4  # 'kamash' step for velocity updates
@@ -37,6 +46,8 @@ class BicycleRaceViewer(threading.Thread):
 
         # hold the image that will be displayed on screen
         self._displayed_image = None
+
+        self._speed = [0,0]
 
         # Velocity bar configurations
         self._player_1_bicycle_icon_x = 150
@@ -97,11 +108,11 @@ class BicycleRaceViewer(threading.Thread):
         """
         # update self._velocity to next step
         if time.time() - self._last_velocity_update_time > self._velocity_update_delay_sec:
-            for (player, velocity), (player, target_velocity) in zip(self._velocity.items(), self._target_velocity.items()):
-                if target_velocity > velocity:
-                    self._velocity[player] = min(velocity + self._velocity_update_delta_kms, target_velocity)
+            for player in range(len(self._velocity)):
+                if self._target_velocity[player] > self._velocity[player]:
+                    self._velocity[player] = min(self._velocity[player] + self._velocity_update_delta_kms, self._target_velocity[player])
                 else:
-                    self._velocity[player] = max(velocity - self._velocity_update_delta_kms, target_velocity)
+                    self._velocity[player] = max(self._velocity[player] - self._velocity_update_delta_kms, self._target_velocity[player])
 
             self._logger.debug('new velocity: {}'.format(self._velocity))
             self._last_velocity_update_time = time.time()
@@ -140,18 +151,36 @@ class BicycleRaceViewer(threading.Thread):
             new_image[x_start: x_start + x_dim, y_start: y_start + y_dim, :] = weighed_overlay_rgb + partial_background_rgb
             return new_image
 
+    def _change_power_state(self,speed):
+        if speed > self.SPEED_STATE_THRESHOLDS[2]:
+            return np.copy(self._images_structures['states/4'])
+        elif speed > self.SPEED_STATE_THRESHOLDS[1]:
+            return np.copy(self._images_structures['states/3'])
+        elif speed > self.SPEED_STATE_THRESHOLDS[0]:
+            return np.copy(self._images_structures['states/2'])
+        else:
+            return np.copy(self._images_structures['states/1'])
+
     def _update_power_bar(self):
         # according tp self.velocity:
         # update images for both players
+        num_of_players = len(self._velocity)
+        power_state_img = [None] * num_of_players
+        power_digits_img = [None] * num_of_players
+        power_digits_offset = [None] * num_of_players
         self._logger.debug('in _update_power_bar')
-        self._update_power_bar_digits()
+        for index in range(len(self._velocity)):
+            power_state_img[index] = self._change_power_state(self._velocity[index])
+            power_digits_img[index] = self._create_number_from_digits(self._number_to_digits(self._velocity[index]),
+                                                                      self.POWER_DIGITS_SCALING)
+            power_digits_offset[index] = self._calculate_digit_offset(power_digits_img[index])
+            self._displayed_image = self._overlay(base_image=self._displayed_image, overlay_image=power_state_img[index],
+                                              location=tuple(self.POWER_BAR_LOCATION[index]))
+            digits_location = map(sum, zip(self.POWER_BAR_LOCATION[index], self.POWER_BAR_DIGIT_OFFSET,
+                                power_digits_offset[index]))
+            self._displayed_image = self._overlay(base_image=self._displayed_image, overlay_image=power_digits_img[index],
+                                              location=tuple(digits_location))
 
-    def _update_power_bar_digits(self):
-        # according to self.velocity:
-        # update images for both players ()
-
-        # if power > 100 change image location - ensure digits center
-        pass
 
     # usage example
     # num = self._create_number_from_digits([3,2, 0],1)
@@ -191,7 +220,16 @@ class BicycleRaceViewer(threading.Thread):
     def _calculate_digit_offset(self, num):
         # receives the concatenated image and returns the offset required to add in order to place its center
         h,w = num.shape[:2]
-        return -h/2,-w/2
+        return [-h/2,-w/2]
+
+    def _number_to_digits(self,number):
+        number = int(number)
+        self._logger.debug(number)
+        number_string = str(number)
+        nums=[]
+        for ch in number_string:
+            nums.append(int(ch))
+        return nums
 
     def _update_velocity_bar(self):
         # bar width + gradient
@@ -203,8 +241,8 @@ class BicycleRaceViewer(threading.Thread):
 
     def _update_velocity_bar_width(self):
 
-        for player, velocity in self._velocity.items():
-            if player == 'player1':
+        for player in range(len(self._velocity)):
+            if player == self.PLAYER_1:
                 bar = self._velocity_bar_player_1
                 location = self._velocity_bar_player_1_location
             else:
@@ -215,7 +253,7 @@ class BicycleRaceViewer(threading.Thread):
             bar_x, bar_y, bar_z = bar.shape
             self._logger.debug('bar shape: ({}, {}, {})'.format(bar_x, bar_y, bar_z))
 
-            bar_stop_pixel = self._map_velocity_to_bar_location(velocity=velocity)
+            bar_stop_pixel = self._map_velocity_to_bar_location(velocity=self._velocity[player])
 
             # mask out bar from bar_stop_pixel until the end
             bar_alpha = np.ones((bar_x, bar_y), dtype=np.uint8) * 255
@@ -251,13 +289,13 @@ class BicycleRaceViewer(threading.Thread):
         overlay the bicycle logo on the velocity bar in the right location
         :return:
         """
-        for player, velocity in self._velocity.items():
-            if player == 'player1':
+        for player in range(len(self._velocity)):
+            if player == self.PLAYER_1:
                 x_loc = self._player_1_bicycle_icon_x
             else:
                 x_loc = self._player_2_bicycle_icon_x
 
-            y_bar_loc = self._map_velocity_to_bar_location(velocity=velocity)
+            y_bar_loc = self._map_velocity_to_bar_location(velocity=self._velocity[player])
             y_icon_loc = y_bar_loc + self._velocity_bar_bicycle_icon_offset
             self._displayed_image = self._overlay(base_image=self._displayed_image,
                                                   overlay_image=self._images_structures['bicycle_icon'],
@@ -298,12 +336,12 @@ if __name__ == '__main__':
     b.setDaemon(True)
     b.start()
     sleep(2)
-    b.update_velocity(player='player1', new_velocity=1)
+    b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=1)
     sleep(5)
-    b.update_velocity(player='player1', new_velocity=30)
+    b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=30)
     sleep(5)
-    b.update_velocity(player='player2', new_velocity=20)
+    b.update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=20)
     sleep(5)
-    b.update_velocity(player='player1', new_velocity=60)
+    b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=61)
     while b.is_alive():
         sleep(1)
