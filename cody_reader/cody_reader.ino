@@ -9,11 +9,7 @@
 #define DOWN      2
 #define NO_CHANGE 3
 
-#define DESIRED_DIRECTION_0 UP
-
-//these defines set the desired direction of the coders, 0 for one direction 1 for the other
-#define C0_DIRECTION 1 
-#define C1_DIRECTION 1 
+#define DESIRED_DIRECTION_0 DOWN
 
 int poll_result_0       = 0;
 int coder_0_movement    = ILLEGAL;
@@ -54,7 +50,7 @@ void counter_write(byte op_id) {
   switch (op_id) {
   case 0 : //coder_0
     temp_data = coder_0_counter;
-    //coder_0_counter = 0;
+    coder_0_counter = 0;
     break;
   case 1 : //coder_1
     temp_data = coder_1_counter;
@@ -72,13 +68,9 @@ void counter_write(byte op_id) {
   }
   
   Serial.print(op_id);
-  Serial.print('\n');
   Serial.print(temp_data);
   Serial.print('\n');
-  Serial.print(illegal_0_counter);
-  Serial.print('\n');
   
-  illegal_0_counter = 0;
 }
 
 ISR(TIMER1_OVF_vect) {      // interrupt service routine that wraps a user defined function supplied by attachInterrupt
@@ -105,7 +97,6 @@ void poll_inputs() {
     case 0x3:  //00_11
       coder_0_movement = ILLEGAL;
       poll_result_0 >> 2;
-      illegal_0_counter++;
       break;
     case 0x4:  //01_00
       coder_0_movement = DOWN;
@@ -115,7 +106,6 @@ void poll_inputs() {
     case 0x6:  //01_10
       coder_0_movement = ILLEGAL;
       poll_result_0 >> 2;
-      illegal_0_counter++;
       break;
     case 0x7:  //01_11
       coder_0_movement = UP;
@@ -126,7 +116,6 @@ void poll_inputs() {
     case 0x9:  //10_01
       coder_0_movement = ILLEGAL;
       poll_result_0 >> 2;
-      illegal_0_counter++;
       break;
 /*  case 0xA:  //10_10
       break;          */
@@ -136,7 +125,6 @@ void poll_inputs() {
     case 0xC:  //11_00
       coder_0_movement = ILLEGAL;
       poll_result_0 >> 2;
-      illegal_0_counter++;
       break;
     case 0xD:  //11_01
       coder_0_movement = DOWN;
