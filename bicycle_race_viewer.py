@@ -254,17 +254,15 @@ class BicycleRaceViewer(threading.Thread):
             self._logger.debug('bar shape: ({}, {}, {})'.format(bar_x, bar_y, bar_z))
 
             bar_stop_pixel = self._map_velocity_to_bar_location(velocity=self._velocity[player])
-
             # mask out bar from bar_stop_pixel until the end
             bar_alpha = np.ones((bar_x, bar_y), dtype=np.uint8) * 255
             bar_alpha[:, bar_stop_pixel:] = 0
 
             self._logger.debug('bar_alpha shape: {}'.format(bar_alpha.shape))
             gradient_end = int(self._velocity_bar_gradient_end * bar_stop_pixel)
-            gradient_space_step = int(gradient_end / self._velocity_bar_gradient_steps)
-            gradient_alpha_step = int(255 / self._velocity_bar_gradient_steps)
-            for i in range(self._velocity_bar_gradient_steps):
-                bar_alpha[:, i*gradient_space_step: (i+1)*gradient_space_step] = i * gradient_alpha_step
+
+            for i in range(gradient_end):
+                bar_alpha[:,i] = int(i*255/gradient_end)
 
             masked_bar = np.dstack((bar, bar_alpha))
 
