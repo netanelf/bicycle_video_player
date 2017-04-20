@@ -34,7 +34,7 @@ class BicycleRaceViewer(threading.Thread):
         self._target_velocity = [0, 0] # player1,player2
         self._last_velocity_update_time = 0
         self._velocity_update_delay_sec = 0.03  # update velocity resolution
-        self._velocity_update_delta_kms = 0.4  # 'kamash' step for velocity updates
+        self._velocity_update_delta_kms = 4  # 'kamash' step for velocity updates
 
 
         # hold all images (icons, background etc.)

@@ -11,6 +11,8 @@ __author__ = 'netanel'
 
 
 class BicyclePlayer(threading.Thread):
+    #TODO: support change of input file
+
     def __init__(self, input_file, overlay_debug=False):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info('initializing {}, input file: {}'.format(self.__class__.__name__, input_file))
@@ -53,7 +55,7 @@ class BicyclePlayer(threading.Thread):
             self.video_resolution = [x_resolution, y_resolution]
             self.logger.info('video resolution: {}'.format(self.video_resolution))
         self.logger.info('read frame rate: {}'.format(self.frame_rate))
-        self.base_delay = int(1000 / self.frame_rate)
+        self.base_delay = 1 #int(1000 / self.frame_rate) - 25
         self.delay = self.base_delay
         self.logger.info('base delay: {}'.format(self.base_delay))
 
@@ -155,7 +157,7 @@ class BicyclePlayer(threading.Thread):
                          .format(start_speed, stop_speed, ramp_time))
         ramp_steps = int(ramp_time.total_seconds())
         ramp_time_step = ramp_time.total_seconds() / ramp_steps
-        ramp_speed_step = (stop_speed - start_speed) / ramp_steps
+        ramp_speed_step = float(stop_speed - start_speed) / ramp_steps
         self.logger.debug('ramp_steps: {}, ramp_time_step: {}, ramp_speed_step: {}'
                           .format(ramp_steps, ramp_time_step, ramp_speed_step))
         for step in range(1, ramp_steps + 1):
@@ -238,25 +240,27 @@ def init_logging(logger_name, logger_level):
 
 if __name__ == '__main__':
     init_logging(logger_name='bicyclePlayer', logger_level=logging.DEBUG)
-    f = 'movie.mp4'
+    f = r'HD Test 1080P Full HD (Avatar).avi'
+    #f = 'Jerusalem_Virtual_Ride_preview_01_140417.mp4'
+    #f = 'movie.mp4'
     image = cv2.imread("icon.png")
     player = BicyclePlayer(input_file=f, overlay_debug=True)
     player.setDaemon(True)
     player.start()
-    time.sleep(10)
-    player.overlay_image(image=image, location=[50, 50], name='icon',weight_transparency=0.5)
+    time.sleep(25)
+    #player.overlay_image(image=image, location=[50, 50], name='icon',weight_transparency=0.5)
 
-    player.ramp_speed(start_speed=3, stop_speed=0.2, ramp_time=timedelta(seconds=15))
-    player.overlay_image(image=image, location=[200, 200], name='icon2', weight_transparency=0.75)
+    #player.ramp_speed(start_speed=1, stop_speed=3, ramp_time=timedelta(seconds=15))
+    #player.overlay_image(image=image, location=[200, 200], name='icon2', weight_transparency=0.75)
 
-    player.set_speed(speed=2)
-    time.sleep(10)
-    player.disable_image_overlay(name='icon')
-    player.set_speed(speed=0.5)
-    time.sleep(10)
-    player.set_speed(speed=1)
-    player.disable_image_overlay(name='icon2')
-    time.sleep(10)
+    #player.set_speed(speed=2)
+    #time.sleep(10)
+    #player.disable_image_overlay(name='icon')
+    #player.set_speed(speed=0.5)
+    #time.sleep(10)
+    #player.set_speed(speed=1)
+    #player.disable_image_overlay(name='icon2')
+    #time.sleep(10)
     player.stop_playing()
     time.sleep(5)
 
