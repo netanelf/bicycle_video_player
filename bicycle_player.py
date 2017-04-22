@@ -6,6 +6,7 @@ import threading
 import logging
 from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
+from Queue import Queue
 
 __author__ = 'netanel'
 
@@ -13,13 +14,13 @@ __author__ = 'netanel'
 class BicyclePlayer(threading.Thread):
     #TODO: support change of input file
 
-    def __init__(self, input_file, overlay_debug=False):
+    def __init__(self, overlay_debug=False):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info('initializing {}, input file: {}'.format(self.__class__.__name__, input_file))
+        self.logger.info('initializing {}'.format(self.__class__.__name__))
         super(BicyclePlayer, self).__init__()
         self.overlay_debug = overlay_debug
-        self.input_file = input_file
         self.video_capturer = None
+        self.capture_thread = None
         self.frame_rate = None
         self.base_delay = None  # ideal delay (1000/ frame rate)
         self.delay = None
@@ -37,10 +38,38 @@ class BicyclePlayer(threading.Thread):
         self.text_font = cv2.FONT_HERSHEY_SIMPLEX
 
         self.frame_counter = 0
-        self._read_file()
 
-    def _read_file(self):
-        self.video_capturer = cv2.VideoCapture(self.input_file)
+    def load_file(self, input_file):
+        """
+        load a file into the player.
+        1. file and parameters (fps etc) are read
+        2. frame_counter is zeroed
+        3. a thread for reading the frames is constructed and started
+        :param input_file:
+        :return:
+        """
+        self.logger.info('load file called, file: {}'.format(input_file))
+        self._read_file(input_file=input_file)
+
+        if self.capture_thread is not None:
+            self.capture_thread.kill_capturer()
+
+        self.logger.info('zeroing frame counter')
+        self.frame_counter = 0
+
+        cap_thread = ThreadedCapturer(VideoCapture_obj=self.video_capturer, queue_size=100)
+        cap_thread.setDaemon(True)
+        cap_thread.start()
+        self.capture_thread = cap_thread
+
+    def get_frame_counter(self):
+        """
+        :return: return frame counter for the current file
+        """
+        return self.frame_counter
+
+    def _read_file(self, input_file):
+        self.video_capturer = cv2.VideoCapture(input_file)
         self.logger.info('openCV version: {}'.format(cv2.__version__))
         if cv2.__version__ > '2.4.9.1':
             self.frame_rate = self.video_capturer.get(cv2.CAP_PROP_FPS)
@@ -55,33 +84,49 @@ class BicyclePlayer(threading.Thread):
             self.video_resolution = [x_resolution, y_resolution]
             self.logger.info('video resolution: {}'.format(self.video_resolution))
         self.logger.info('read frame rate: {}'.format(self.frame_rate))
-        self.base_delay = 1 #int(1000 / self.frame_rate) - 25
+
+        self.base_delay = 1  # TODO: changed to 1 just for now - play as quickly as we can
+        self.base_delay = int(1000 / self.frame_rate)
+
         self.delay = self.base_delay
         self.logger.info('base delay: {}'.format(self.base_delay))
 
     def run(self):
 
         self.should_run = True
-        start_play_time = time.time()
+        fps_time = time.time()
+        fps_frame = 0
 
-        cv2.namedWindow('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN)
-
+        cv2.namedWindow('BicycleVideoWindow', cv2.WINDOW_OPENGL)
         if cv2.__version__ > '2.4.9.1':
             cv2.setWindowProperty('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         else:
             cv2.setWindowProperty('BicycleVideoWindow', cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
-        while (self.video_capturer.isOpened()) and (self.should_run is True):
+
+        frame_grab_time = 0
+        processing_and_imshow_time = 0
+        waitkey_time = 0
+
+        while self.should_run is True:
+            t0 = time.time()
 
             while self.paused:
                 time.sleep(0.01)
 
-            ret, frame = self.video_capturer.read()
-
-            if frame is None:
-                self.logger.info('did not receive frame, assuming file ended, jumping to start')
-                self.video_capturer.set(cv2.cv.CV_CAP_PROP_POS_AVI_RATIO, 0)
+            if self.capture_thread is None or self.capture_thread.q.qsize() == 0:
+                time.sleep(0.01)
                 continue
 
+            frame = self.capture_thread.q.get()
+
+            t1 = time.time()
+            if frame is None:
+                self.logger.info('did not receive frame, assuming file ended, jumping to start, zeroing frame_counter')
+                self.video_capturer.set(cv2.cv.CV_CAP_PROP_POS_AVI_RATIO, 0)
+                self.frame_counter = 0
+                continue
+
+            # copy all overlay images onto current frame
             if len(self.image_overlays) > 0:
                 for overlay_name, overlay_data in self.image_overlays.items():
                     image = overlay_data['image']
@@ -93,22 +138,38 @@ class BicyclePlayer(threading.Thread):
                     cv2.addWeighted(image, transparency, base_partial, 1 - transparency, 0, overlaid_output)
                     frame[x_start: x_start + x_dim, y_start: y_start + y_dim, :] = overlaid_output
 
+            # copy all overlay texts onto current frame
             if len(self.text_overlays) > 0:
                 for overlay_name, overlay_data in self.text_overlays.items():
                     cv2.putText(frame, overlay_data['text'], overlay_data['location'], self.text_font, 1, (255, 255, 255), 2)
 
+            # move frame into output buffer
             cv2.imshow('BicycleVideoWindow', frame)
-            self.frame_counter += 1
-            if self.frame_counter % 200 == 0:
-                t = time.time()
-                dt = t - start_play_time
-                self.logger.debug('played {} frames in {} seconds ({} fps average)'
-                                  .format(self.frame_counter, dt, self.frame_counter / dt))
-                start_play_time = t
-                self.frame_counter = 0
 
+            t2 = time.time()
+            self.frame_counter += 1
+            fps_frame += 1
+
+            if self.frame_counter % 50 == 0:
+                t = time.time()
+                dt = t - fps_time
+                fps = fps_frame / dt
+                self.logger.debug('played {} frames in {} seconds ({} fps average)'
+                                  .format(fps_frame, dt, fps))
+                if self.overlay_debug:
+                    self.text_overlays['debug_message'] = {'text': 'fps: {:0.2f}'.format(fps), 'location': (50, 500)}
+                fps_time = t
+                fps_frame = 0
+
+            # show frame on screen
             if cv2.waitKey(self.delay) & 0xFF == ord('q'):
                 break
+
+            t3 = time.time()
+
+            frame_grab_time += t1-t0
+            processing_and_imshow_time += t2 - t1
+            waitkey_time += t3 - t2
 
         self.video_capturer.release()
         cv2.destroyAllWindows()
@@ -118,7 +179,12 @@ class BicyclePlayer(threading.Thread):
         cv2.waitKey(1)
         cv2.waitKey(1)
         cv2.waitKey(1)
+
         self.logger.info('playing stopped')
+        self.logger.debug('timing:')
+        self.logger.debug('frame_grab_time: {}'.format(frame_grab_time))
+        self.logger.debug('processing_and_imshow_time: {}'.format(processing_and_imshow_time))
+        self.logger.debug('waitkey_time: {}'.format(waitkey_time))
 
     def set_speed(self, speed):
         """
@@ -221,6 +287,38 @@ class BicyclePlayer(threading.Thread):
     def disable_text_overlay(self, name):
         self.text_overlays.pop(name)
 
+
+class ThreadedCapturer(threading.Thread):
+    """
+    thread for reading frames from video file and dumping them into a Queue,
+    this way the frame reading process does not block the image processing.
+    """
+    def __init__(self, VideoCapture_obj, queue_size):
+        super(ThreadedCapturer, self).__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.capturer = VideoCapture_obj
+        self.q = Queue(maxsize=queue_size)
+        self.should_run = False
+        self.qsize_print_time = -1
+        self.logger.info('finished initiating ThreadedCapturer')
+
+    def run(self):
+        self.logger.info('ThreadedCapturer starting')
+        self.should_run = True
+
+        while self.should_run:
+            if not self.q.full():
+                (grabbed, frame) = self.capturer.read()
+                self.q.put(frame)
+
+            if time.time() - self.qsize_print_time > 5:
+                self.logger.debug('q size: {}'.format(self.q.qsize()))
+                self.qsize_print_time = time.time()
+
+    def kill_capturer(self):
+        self.should_run = False
+
+
 def init_logging(logger_name, logger_level):
     logger = logging.getLogger()
     s_handler = logging.StreamHandler()
@@ -240,27 +338,34 @@ def init_logging(logger_name, logger_level):
 
 if __name__ == '__main__':
     init_logging(logger_name='bicyclePlayer', logger_level=logging.DEBUG)
-    f = r'HD Test 1080P Full HD (Avatar).avi'
+    #f = r'HD Test 1080P Full HD (Avatar).avi'
     #f = 'Jerusalem_Virtual_Ride_preview_01_140417.mp4'
-    #f = 'movie.mp4'
-    image = cv2.imread("icon.png")
-    player = BicyclePlayer(input_file=f, overlay_debug=True)
+    f2 = 'GoPro_BMX_Bike_Riding_in_NYC_4.mp4'
+    f = 'part.avi'
+    #f = 'part.mp4'
+    image = cv2.imread("mushroom.jpeg")
+    player = BicyclePlayer(overlay_debug=True)
     player.setDaemon(True)
     player.start()
-    time.sleep(25)
-    #player.overlay_image(image=image, location=[50, 50], name='icon',weight_transparency=0.5)
-
-    #player.ramp_speed(start_speed=1, stop_speed=3, ramp_time=timedelta(seconds=15))
-    #player.overlay_image(image=image, location=[200, 200], name='icon2', weight_transparency=0.75)
-
-    #player.set_speed(speed=2)
-    #time.sleep(10)
-    #player.disable_image_overlay(name='icon')
-    #player.set_speed(speed=0.5)
-    #time.sleep(10)
-    #player.set_speed(speed=1)
-    #player.disable_image_overlay(name='icon2')
-    #time.sleep(10)
+    player.load_file(input_file=f)
+    for i in range(10):
+        time.sleep(1)
+        logging.info('frame: {}'.format(player.get_frame_counter()))
+    player.load_file(input_file=f2)
+    time.sleep(10)
+    # player.overlay_image(image=image, location=[50, 50], name='icon', weight_transparency=0.5)
+    #
+    # player.ramp_speed(start_speed=1, stop_speed=3, ramp_time=timedelta(seconds=15))
+    # player.overlay_image(image=image, location=[200, 200], name='icon2', weight_transparency=0.75)
+    #
+    # player.set_speed(speed=2)
+    # time.sleep(10)
+    # player.disable_image_overlay(name='icon')
+    # player.set_speed(speed=0.5)
+    # time.sleep(10)
+    # player.set_speed(speed=1)
+    # player.disable_image_overlay(name='icon2')
+    # time.sleep(10)
     player.stop_playing()
     time.sleep(5)
 
