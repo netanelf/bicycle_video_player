@@ -35,8 +35,8 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity = [0, 0]  # player1,player2
         self._target_velocity = [0, 0]  # player1,player2
         self._last_velocity_update_time = 0
-        self._velocity_update_delay_sec = 0.001  # update velocity resolution
-        self._velocity_update_delta_kms = 0.5  # 'kamash' step for velocity updates
+        self._velocity_update_delay_sec = 0 #0.001  # update velocity resolution
+        self._velocity_update_delta_kms = 1  # 'kamash' step for velocity updates
 
         self._velocity_bars = [0, 0] #self._images_structures['bar_fill']
 
@@ -339,27 +339,47 @@ class BicycleRaceViewer(threading.Thread):
         else:
             cv2.setWindowProperty('display', cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
 
+        image_preparation_time = 0
+        imshow_time = 0
+        waitkey_time = 0
+
         while self._running:
+
             if self._target_velocity != self._velocity:
+                t0 = time.clock()
                 self._displayed_image = np.copy(self._images_structures['Background'])
                 self._update_current_velocity()
 
                 self._update_power_bar()
 
                 self._update_velocity_bar()
-
+                t1 = time.clock()
                 # show image
                 cv2.imshow('display', self._displayed_image)
+                t2 = time.clock()
+
+                image_preparation_time += (t1 - t0)
+                imshow_time += (t2 - t1)
+            t3 = time.clock()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+            t4 = time.clock()
 
+            waitkey_time += t4-t3
+
+        self._logger.info('image_preparation_time: {}'.format(image_preparation_time))
+        self._logger.info('imshow_time: {}'.format(imshow_time))
+        self._logger.info('waitkey_time: {}'.format(waitkey_time))
         self._running = False
         self._logger.info('main loop finished')
 
+    def stop_viewer(self):
+        self._logger.info('stop_viewer was called')
+        self._running = False
 
 if __name__ == '__main__':
     from bicycle_player import init_logging
-    init_logging(logger_name='BicycleRaceViewer', logger_level=logging.DEBUG)
+    init_logging(logger_name='BicycleRaceViewer', logger_level=logging.INFO)
     b = BicycleRaceViewer()
     b.setDaemon(True)
     b.start()
@@ -371,5 +391,7 @@ if __name__ == '__main__':
     b.update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=20)
     sleep(5)
     b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=61)
-    while b.is_alive():
-        sleep(1)
+    sleep(5)
+    b.stop_viewer()
+    sleep(1)
+

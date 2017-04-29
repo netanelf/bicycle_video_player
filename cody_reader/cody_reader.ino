@@ -107,7 +107,7 @@ void counter_write(byte op_id) {
   }
   
   Serial.print(op_id);
-  Serial.print('\n');
+  //Serial.print('\n');
   Serial.print(temp_data);
   Serial.print('\n');
   
