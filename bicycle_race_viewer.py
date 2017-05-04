@@ -8,6 +8,7 @@ import cv2
 import os
 import bicycle_race_config as cfg
 from collections import defaultdict
+from time import gmtime, strftime
 
 timing_stats = defaultdict(int)
 
@@ -31,11 +32,15 @@ class BicycleRaceViewer(threading.Thread):
     POWER_BAR_DIGIT_OFFSET = [300, 300]
     SPEED_POWER_CONVERSION_FACTOR = 2  # power = speed * factor
 
+    RECORD_DIGIT_LOCATION = [237,240]
+
+
     VELOCITY_DIGITS_SCALING = 1
 
     VELOCITY_BAR_SPEED_OFFSET = [60, 60]
     PLAYER_1 = 0
     PLAYER_2 = 1
+
 
     @timing_decorator
     def __init__(self):
@@ -48,7 +53,7 @@ class BicycleRaceViewer(threading.Thread):
         self._target_velocity = [0, 0]  # player1,player2
         self._last_velocity_update_time = 0
         self._velocity_update_delay_sec = 0  #0.001  # update velocity resolution
-        self._velocity_update_delta_kms = 0.1  # 'kamash' step for velocity updates
+        self._velocity_update_delta_kms = 2  # 'kamash' step for velocity updates
 
         self._velocity_bars = [0, 0] #self._images_structures['bar_fill']
 
@@ -62,11 +67,15 @@ class BicycleRaceViewer(threading.Thread):
         self._displayed_image = None
 
         # Velocity bar configurations
-        self._velocity_bar_min_pixel = 100
-        self._velocity_bar_max_pixel = 1200
+        self._velocity_bar_min_pixel = cfg.VELOCITY_BAR_LOCATION[0][1]
+        self._velocity_bar_max_pixel = cfg.VELOCITY_BAR_LOCATION[0][1] + cfg.VELOCITY_BAR_SIZE[1]
         self._velocity_bar_min_velocity = 0
         self._velocity_bar_max_velocity = 100
         self._velocity_bar_gradient_end = 0.3  # percentage of visible bar that will have a gradient effect
+
+        self._record_date = strftime("%Y-%m-%d", gmtime())
+        self._logger.info("data change {}".format(strftime("%Y-%m-%d %H:%M", gmtime())))
+        self._daily_record = 0
 
     # reads all images under a directory into _image_structures. Name convention to key is <root after dir_name>/<filename wo extention>
     # for example if we call _read_all_images(bicycle_race_sample_pics) then bicycle_race_sample_pics/digits/0.png will
@@ -118,6 +127,17 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_bars[1] = v_bar2
 
     @timing_decorator
+    def _check_record(self,player_speed):
+        current_date = strftime("%Y-%m-%d", gmtime())
+        if self._record_date != current_date:
+            self._daily_record = 0
+            self._record_date = current_date
+            self._logger.info("data change {}".format(current_date))
+        if player_speed > self._daily_record:
+            self._daily_record = player_speed
+            self._logger.info("Record broke {}".format(player_speed))
+
+    @timing_decorator
     def _parse_combined_digits(self):
         self._logger.info('in _parse_combined_digits')
         combined_struct = self._images_structures['combined_digits/Numbers']
@@ -131,7 +151,7 @@ class BicycleRaceViewer(threading.Thread):
             self._images_structures[digit_name] = combined_struct[:, y_seperator_pixel[i]: y_seperator_pixel[i + 1], :]
 
     @timing_decorator
-    def update_velocity(self, player, new_velocity):
+    def _update_velocity(self, player, new_velocity):
         """
         should be used by controller
         :param player: player1/ player2
@@ -140,6 +160,7 @@ class BicycleRaceViewer(threading.Thread):
         """
         self._logger.info('volocity updated by controller({}: {})'.format(player, new_velocity))
         self._target_velocity[player] = new_velocity
+        self._check_record(new_velocity)
 
     @timing_decorator
     def _update_current_velocity(self):
@@ -299,13 +320,15 @@ class BicycleRaceViewer(threading.Thread):
 
     @timing_decorator
     def _update_velocity_bar(self):
+        # update records
+        self._update_number_to_screen(self._daily_record,self.RECORD_DIGIT_LOCATION,0.5)
         # bar width + gradient
         self._update_velocity_bar_width()
         # bicycle logo placement
         self._update_bicycle_logos_placements()
         # km"sh location update
-        self._update_speed_placements()
         # digits update + location
+        self._update_speed_placements()
 
     @timing_decorator
     def _update_velocity_bar_width(self):
@@ -318,12 +341,16 @@ class BicycleRaceViewer(threading.Thread):
             self._logger.debug('bar shape: ({}, {}, {})'.format(bar_x, bar_y, bar_z))
 
             bar_stop_pixel = self._map_velocity_to_bar_location(velocity=self._velocity[player])
+            self._logger.debug('bar stop pixel: {}'.format(bar_stop_pixel))
             # mask out bar from bar_stop_pixel until the end
             bar_alpha = np.ones((bar_x, bar_y), dtype=np.uint8) * 255
-            bar_alpha[:, bar_stop_pixel:] = 0
+            bar_alpha[:, (bar_stop_pixel - cfg.VELOCITY_BAR_LOCATION[player][1]):] = 0
+
+            self._logger.debug('bar size : {}'.format(
+                (bar_stop_pixel - cfg.VELOCITY_BAR_LOCATION[player][1])))
 
             self._logger.debug('bar_alpha shape: {}'.format(bar_alpha.shape))
-            gradient_end = int(self._velocity_bar_gradient_end * bar_stop_pixel)
+            gradient_end = int(self._velocity_bar_gradient_end * (bar_stop_pixel - cfg.VELOCITY_BAR_LOCATION[player][1]))
 
             for i in range(gradient_end):
                 bar_alpha[:, i] = int(i*255/gradient_end)
@@ -341,9 +368,14 @@ class BicycleRaceViewer(threading.Thread):
         :return: ypixel location of and of bar
         """
         # (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min --> map one spectrum to another
-        pixel = velocity * (self._velocity_bar_max_pixel - self._velocity_bar_min_pixel) \
+        if velocity < self._velocity_bar_min_velocity:
+            return self._velocity_bar_min_pixel
+        if velocity > self._velocity_bar_max_velocity:
+            return self._velocity_bar_max_pixel
+        pixel = (velocity - self._velocity_bar_min_velocity) * (self._velocity_bar_max_pixel - self._velocity_bar_min_pixel) \
                 / (self._velocity_bar_max_velocity - self._velocity_bar_min_velocity) \
-                + self._velocity_bar_max_velocity
+                + self._velocity_bar_min_pixel
+        self._logger.debug("mapping location to {}".format(pixel))
         return int(pixel)
 
     @timing_decorator
@@ -357,6 +389,7 @@ class BicycleRaceViewer(threading.Thread):
 
             y_bar_loc = self._map_velocity_to_bar_location(velocity=self._velocity[player])
             y_icon_loc = y_bar_loc + cfg.BICYCLE_ICON_HORIZONTAL_OFFSET
+            self._logger.debug("y_icon_loc {}".format(y_icon_loc))
             self._displayed_image = self._overlay(base_image=self._displayed_image,
                                                   overlay_image=self._images_structures['Rider Icon'],
                                                   location=(x_icon_loc, y_icon_loc))
@@ -414,20 +447,28 @@ class BicycleRaceViewer(threading.Thread):
 
 if __name__ == '__main__':
     from bicycle_player import init_logging
-    init_logging(logger_name='BicycleRaceViewer', logger_level=logging.INFO)
+    init_logging(logger_name='BicycleRaceViewer', logger_level=logging.DEBUG)
     b = BicycleRaceViewer()
     b.setDaemon(True)
     t0 = time.clock()
     b.start()
     sleep(2)
-    b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=1)
-    sleep(5)
-    b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=30)
-    sleep(5)
-    b.update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=20)
-    sleep(5)
-    b.update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=61)
-    sleep(5)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=1)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=30)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=1)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=30)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=1)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=1)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=30)
+    sleep(2)
+    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=30)
+    sleep(2)
     b.stop_viewer()
     sleep(1)
 

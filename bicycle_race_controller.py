@@ -18,7 +18,7 @@ class BicycleRaceController(threading.Thread):
         self._viewer.start()
 
         #TODO:  this should be fixed in BicycleRaceViewer, if no initial speed is given nothing is shown
-        self._viewer.update_velocity(player=0, new_velocity=1)
+        self._viewer._update_velocity(player=0, new_velocity=1)
         self._serial = serial.Serial(port=self.PORT,
                                      baudrate=self.BAUDRATE,
                                      bytesize=serial.EIGHTBITS,
@@ -65,7 +65,7 @@ class BicycleRaceController(threading.Thread):
             player = op_id
             encoder_delta = int(''.join(data))
             self._logger.debug('player: {}, encoder: {}'.format(player, encoder_delta))
-            self._viewer.update_velocity(player=player, new_velocity=encoder_delta/100)
+            self._viewer._update_velocity(player=player, new_velocity=encoder_delta / 100)
 
 
     def update_race_viewer(self, new_configuration):
