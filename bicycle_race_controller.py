@@ -6,11 +6,11 @@ import serial
 
 
 class BicycleRaceController(threading.Thread):
-    READ_TIMEOUT = 2
-    PORT = '/dev/ttyUSB0' #'COM40'
-    BAUDRATE = 9600
+    # READ_TIMEOUT = 2
+    # PORT = '/dev/ttyUSB0' #'COM40'
+    # BAUDRATE = 9600
 
-    def __init__(self):
+    def __init__(self,serial):
         self._logger = logging.getLogger(self.__class__.__name__)
         super(BicycleRaceController, self).__init__()
         self._viewer = BicycleRaceViewer()
@@ -19,17 +19,18 @@ class BicycleRaceController(threading.Thread):
 
         #TODO:  this should be fixed in BicycleRaceViewer, if no initial speed is given nothing is shown
         self._viewer._update_velocity(player=0, new_velocity=1)
-        self._serial = serial.Serial(port=self.PORT,
-                                     baudrate=self.BAUDRATE,
-                                     bytesize=serial.EIGHTBITS,
-                                     stopbits=serial.STOPBITS_ONE,
-                                     parity=serial.PARITY_NONE,
-                                     writeTimeout=2,
-                                     timeout=self.READ_TIMEOUT)
-        try:
-            self._serial.open()
-        except Exception as ex:
-            self._logger.error(ex)
+        self._serial = serial
+        # self._serial = serial.Serial(port=self.PORT,
+        #                              baudrate=self.BAUDRATE,
+        #                              bytesize=serial.EIGHTBITS,
+        #                              stopbits=serial.STOPBITS_ONE,
+        #                              parity=serial.PARITY_NONE,
+        #                              writeTimeout=2,
+        #                              timeout=self.READ_TIMEOUT)
+        # try:
+        #     self._serial.open()
+        # except Exception as ex:
+        #     self._logger.error(ex)
         self._logger.info('finished init')
 
     def run(self):

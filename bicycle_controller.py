@@ -9,8 +9,10 @@ class BicycleController(threading.Thread):
               'MISHOR': 2
               }
 
-    def __init__(self, com_ports, movies, list_of_topographies):
-        # initilize player
+    def __init__(self, serial):
+        # initialize list of topographies
+        # load movie associated with each route
+        # initialize player
         pass
 
     def run(self):
@@ -51,17 +53,17 @@ class BicycleController(threading.Thread):
 
 
 
-if __name__ == '__main__':
-    pass
-    for port_try in TestChip.TcCommunication.get_serial_ports():
-        # print port_try
-        ser = serial.Serial(
-            port=port_try,
-            baudrate=9600,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS
-        )
-    # find com ports
-    # define com ports
-    # start controller
+# if __name__ == '__main__':
+#     pass
+#     for port_try in TestChip.TcCommunication.get_serial_ports():
+#         # print port_try
+#         ser = serial.Serial(
+#             port=port_try,
+#             baudrate=9600,
+#             parity=serial.PARITY_NONE,
+#             stopbits=serial.STOPBITS_ONE,
+#             bytesize=serial.EIGHTBITS
+#         )
+#     # find com ports
+#     # define com ports
+#     # start controller
