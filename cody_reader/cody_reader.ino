@@ -8,6 +8,9 @@
 #define BUTTON_2_PIN   10
 #define FAN_PIN        11
 #define LOAD_PIN       12
+#define JUMPER_PIN_0   13 //DEVICE_ID LSB
+#define JUMPER_PIN_1   14 //...
+#define JUMPER_PIN_2   15 //DEVICE ID MSB
 
 #define NUM_OF_CODERS 2
 
@@ -29,7 +32,7 @@
 #define BUTTON_2       4
 #define IDENTIFICATION 5
 
-#define DEVICE_ID      25 //set unique device id to any arduino connected to the same computer, python code should be able to recgnoize which one is which according to it.
+int DEVICE_ID;
 
 int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
@@ -38,8 +41,8 @@ int poll_result_coder_0  = 0;
 int poll_result_coder_1  = 0;
 
 
-int coder_0_movement    = ILLEGAL;
-int coder_1_movement    = ILLEGAL;
+int coder_0_movement = ILLEGAL;
+int coder_1_movement = ILLEGAL;
 
 volatile unsigned int coder_0_counter = 0;
 volatile unsigned int coder_1_counter = 0;
@@ -56,13 +59,21 @@ void setup() {
   
   pinMode(CODER_0_PIN_0,INPUT_PULLUP);
   pinMode(CODER_0_PIN_1,INPUT_PULLUP);
-
+  pinMode(CODER_1_PIN_0,INPUT_PULLUP);
+  pinMode(CODER_1_PIN_1,INPUT_PULLUP);
+  
   pinMode(BUTTON_0_PIN,INPUT_PULLUP);
   pinMode(BUTTON_1_PIN,INPUT_PULLUP);
   pinMode(BUTTON_2_PIN,INPUT_PULLUP);  
 
   pinMode(FAN_PIN,OUTPUT);
   pinMode(LOAD_PIN,OUTPUT);
+
+  pinMode(JUMPER_PIN_0,INPUT_PULLUP);
+  pinMode(JUMPER_PIN_1,INPUT_PULLUP);
+  pinMode(JUMPER_PIN_2,INPUT_PULLUP);
+
+  DEVICE_ID = 4 * digitalRead(JUMPER_PIN_2) + 2 * digitalRead(JUMPER_PIN_1) + 1 * digitalRead(JUMPER_PIN_0);
 
   // initialize timer1 
   noInterrupts();           // disable all interrupts
