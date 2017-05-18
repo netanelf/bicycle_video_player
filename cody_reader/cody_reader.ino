@@ -1,13 +1,15 @@
 
 #define CODER_0_PIN_0  4
 #define CODER_0_PIN_1  5
-#define BUTTON_0_PIN   6
-#define BUTTON_1_PIN   7
-#define BUTTON_2_PIN   8
-#define FAN_PIN        9
-#define LOAD_PIN       10
+#define CODER_1_PIN_0  6
+#define CODER_1_PIN_1  7
+#define BUTTON_0_PIN   8
+#define BUTTON_1_PIN   9
+#define BUTTON_2_PIN   10
+#define FAN_PIN        11
+#define LOAD_PIN       12
 
-#define NUM_OF_CODERS 1
+#define NUM_OF_CODERS 2
 
 #define ILLEGAL   0
 #define UP        1
@@ -15,6 +17,7 @@
 #define NO_CHANGE 3
 
 #define DESIRED_DIRECTION_0 DOWN
+#define DESIRED_DIRECTION_1 DOWN
 
 #define STOP  LOW
 #define START HIGH
@@ -32,10 +35,11 @@ int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
 int poll_result_button_2 = 0x2;
 int poll_result_coder_0  = 0;
+int poll_result_coder_1  = 0;
 
 
 int coder_0_movement    = ILLEGAL;
-int illegal_0_counter   = 0;
+int coder_1_movement    = ILLEGAL;
 
 volatile unsigned int coder_0_counter = 0;
 volatile unsigned int coder_1_counter = 0;
@@ -123,74 +127,90 @@ void poll_inputs() {
     poll_result_coder_0 = poll_result_coder_0 << 2; //we are reading 2 bits every time so we should get |P1|P0|C1|C0|
     poll_result_coder_0 = digitalRead(CODER_0_PIN_0) ? (poll_result_coder_0 | (0x1 << 0)) : (poll_result_coder_0 & ~(0x1 << 0));  
     poll_result_coder_0 = digitalRead(CODER_0_PIN_1) ? (poll_result_coder_0 | (0x1 << 1)) : (poll_result_coder_0 & ~(0x1 << 1)); 
-
-    poll_result_button_0 << 1;
-    poll_result_button_0 = digitalRead(BUTTON_0_PIN) ? (poll_result_button_0 | 0x1) : (poll_result_button_0 & ~0x1);
-    poll_result_button_1 << 1;
-    poll_result_button_1 = digitalRead(BUTTON_1_PIN) ? (poll_result_button_1 | 0x1) : (poll_result_button_1 & ~0x1);
-    poll_result_button_2 << 1;
-    poll_result_button_2 = digitalRead(BUTTON_2_PIN) ? (poll_result_button_2 | 0x1) : (poll_result_button_2 & ~0x1);
+    coder_0_movement = coder_LUT(poll_result_coder_0, 0);
+    if (coder_0_movement == DESIRED_DIRECTION_0) coder_0_counter++;
+  }
+  
+  if (NUM_OF_CODERS > 1) {
+    poll_result_coder_1 = poll_result_coder_1 << 2; //we are reading 2 bits every time so we should get |P1|P0|C1|C0|
+    poll_result_coder_1 = digitalRead(CODER_1_PIN_0) ? (poll_result_coder_1 | (0x1 << 0)) : (poll_result_coder_1 & ~(0x1 << 0));  
+    poll_result_coder_1 = digitalRead(CODER_1_PIN_1) ? (poll_result_coder_1 | (0x1 << 1)) : (poll_result_coder_1 & ~(0x1 << 1)); 
+    coder_1_movement = coder_LUT(poll_result_coder_1, 1);
+    if (coder_1_movement == DESIRED_DIRECTION_1) coder_1_counter++;    
   }
 
+  poll_result_button_0 << 1;
+  poll_result_button_0 = digitalRead(BUTTON_0_PIN) ? (poll_result_button_0 | 0x1) : (poll_result_button_0 & ~0x1);
+  poll_result_button_1 << 1;
+  poll_result_button_1 = digitalRead(BUTTON_1_PIN) ? (poll_result_button_1 | 0x1) : (poll_result_button_1 & ~0x1);
+  poll_result_button_2 << 1;
+  poll_result_button_2 = digitalRead(BUTTON_2_PIN) ? (poll_result_button_2 | 0x1) : (poll_result_button_2 & ~0x1);
+  
   if (poll_result_button_0 == 0x1) counter_write(BUTTON_0);
   if (poll_result_button_1 == 0x1) counter_write(BUTTON_1);
   if (poll_result_button_2 == 0x1) counter_write(BUTTON_2);
+}
 
-  switch (poll_result_coder_0 & 0xF) {
+int coder_LUT(int poll_result, int coder_id) {
+  int coder_movement;
+    switch (poll_result & 0xF) {
 /*  case 0x0:  //00_00
       break;          */
     case 0x1:  //00_01
-      coder_0_movement = UP;
+      coder_movement = UP;
       break;
     case 0x2:  //00_10
-      coder_0_movement = DOWN;
+      coder_movement = DOWN;
       break;
     case 0x3:  //00_11
-      coder_0_movement = ILLEGAL;
-      poll_result_coder_0 >> 2;
+      coder_movement = ILLEGAL;
+      if (coder_id == 0) poll_result_coder_0 >> 2;
+      if (coder_id == 1) poll_result_coder_1 >> 2;
       break;
     case 0x4:  //01_00
-      coder_0_movement = DOWN;
+      coder_movement = DOWN;
       break;
 /*  case 0x5:  //01_01
       break;          */
     case 0x6:  //01_10
-      coder_0_movement = ILLEGAL;
-      poll_result_coder_0 >> 2;
+      coder_movement = ILLEGAL;
+      if (coder_id == 0) poll_result_coder_0 >> 2;
+      if (coder_id == 1) poll_result_coder_1 >> 2;
       break;
     case 0x7:  //01_11
-      coder_0_movement = UP;
+      coder_movement = UP;
       break;
     case 0x8:  //10_00
-      coder_0_movement = UP;
+      coder_movement = UP;
       break;
     case 0x9:  //10_01
-      coder_0_movement = ILLEGAL;
-      poll_result_coder_0 >> 2;
+      coder_movement = ILLEGAL;
+      if (coder_id == 0) poll_result_coder_0 >> 2;
+      if (coder_id == 1) poll_result_coder_1 >> 2;
       break;
 /*  case 0xA:  //10_10
       break;          */
     case 0xB:  //10_11
-      coder_0_movement = DOWN;
+      coder_movement = DOWN;
       break;
     case 0xC:  //11_00
-      coder_0_movement = ILLEGAL;
-      poll_result_coder_0 >> 2;
+      coder_movement = ILLEGAL;
+      if (coder_id == 0) poll_result_coder_0 >> 2;
+      if (coder_id == 1) poll_result_coder_1 >> 2;
       break;
     case 0xD:  //11_01
-      coder_0_movement = DOWN;
+      coder_movement = DOWN;
       break;
     case 0xE:  //11_10
-      coder_0_movement = UP;
+      coder_movement = UP;
       break;
 /*    case 0xF:  //11_11
       break;          */      
     default:
-      coder_0_movement = NO_CHANGE;
+      coder_movement = NO_CHANGE;
       break;
   }
-
-  if (coder_0_movement == DESIRED_DIRECTION_0) coder_0_counter++;
+  return coder_movement;
 }
 
 void check_id_request() {
