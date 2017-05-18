@@ -7,7 +7,7 @@ import serial
 
 class BicycleRaceController(threading.Thread):
     READ_TIMEOUT = 2
-    PORT = 'COM40'
+    PORT = '/dev/ttyUSB0' #'COM40'
     BAUDRATE = 9600
 
     def __init__(self):
