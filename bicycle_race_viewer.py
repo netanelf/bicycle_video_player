@@ -51,9 +51,10 @@ class BicycleRaceViewer(threading.Thread):
 
         self._velocity = [0, 0]  # player1,player2
         self._target_velocity = [0, 0]  # player1,player2
+	#self._delta = [0, 0]  # TODO: update _velocity_update_delay_sec according to the difference between current velocity and target velicity
         self._last_velocity_update_time = 0
         self._velocity_update_delay_sec = 0  #0.001  # update velocity resolution
-        self._velocity_update_delta_kms = 2  # 'kamash' step for velocity updates
+        self._velocity_update_delta_kms = 0.5  # 'kamash' step for velocity updates
 
         self._velocity_bars = [0, 0] #self._images_structures['bar_fill']
 
@@ -162,6 +163,9 @@ class BicycleRaceViewer(threading.Thread):
         """
         self._logger.info('volocity updated by controller({}: {})'.format(player, new_velocity))
         self._target_velocity[player] = new_velocity
+	#self._delta[player] = abs(self._target_velocity[player] - self._velocity[player])
+	#self._logger.info([d + 1 for d in self._delta])
+	#self._velocity_update_delay_sec = 0.2 / max([d + 1 for d in self._delta])
         self._check_record(new_velocity)
 
     @timing_decorator
@@ -400,7 +404,8 @@ class BicycleRaceViewer(threading.Thread):
     def run(self):
         self._logger.info('starting main loop')
         self._running = True
-        cv2.namedWindow('display', cv2.WND_PROP_FULLSCREEN)
+        #cv2.namedWindow('display', cv2.WND_PROP_FULLSCREEN)
+	cv2.namedWindow('display', cv2.WINDOW_OPENGL)
 
         if cv2.__version__ > '2.4.9.1':
             cv2.setWindowProperty('display', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
