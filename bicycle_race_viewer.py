@@ -40,7 +40,9 @@ class BicycleRaceViewer(threading.Thread):
     VELOCITY_BAR_SPEED_OFFSET = [60, 60]
     PLAYER_1 = 0
     PLAYER_2 = 1
-
+    PLAYER_1_COLOR = 'green'
+    PLAYER_2_COLOR = 'yellow'
+    DAILY_RECORD_COLOR = 'white'
 
     @timing_decorator
     def __init__(self):
@@ -51,7 +53,7 @@ class BicycleRaceViewer(threading.Thread):
 
         self._velocity = [0, 0]  # player1,player2
         self._target_velocity = [0, 0]  # player1,player2
-	#self._delta = [0, 0]  # TODO: update _velocity_update_delay_sec according to the difference between current velocity and target velicity
+        #self._delta = [0, 0]  # TODO: update _velocity_update_delay_sec according to the difference between current velocity and target velicity
         self._last_velocity_update_time = 0
         self._velocity_update_delay_sec = 0  #0.001  # update velocity resolution
         self._velocity_update_delta_kms = 0.5  # 'kamash' step for velocity updates
@@ -62,9 +64,9 @@ class BicycleRaceViewer(threading.Thread):
         self._images_structures = {}
         self._read_all_images(cfg.GRAPHICS_DICTIONARY)
         self._create_on_the_fly_images()  # create structures for graphics with no image (like velocity bar)
-        self._parse_combined_digits('digits_green')
-        self._parse_combined_digits('digits_yellow')
-        self._parse_combined_digits('digits_white')
+        self._parse_combined_digits('digits-green')
+        self._parse_combined_digits('digits-yellow')
+        self._parse_combined_digits('digits-white')
 
         # hold the image that will be displayed on screen
         self._displayed_image = None
@@ -147,11 +149,12 @@ class BicycleRaceViewer(threading.Thread):
         x_len, y_len, z_len = combined_struct.shape
         self._logger.debug('combined digits graphics length: {}'.format(y_len))
 
-        y_seperator_pixel = [0, 55, 80, 128, 173, 224, 266, 311, 355, 401, 452]
+        y_seperator_pixel = [0, 40, 65, 107, 147, 193, 231, 271, 310, 352, 390]
 
         for i in range(len(y_seperator_pixel) - 1):
             digit_name = '{}/{}'.format(filename,i)
             self._images_structures[digit_name] = combined_struct[:, y_seperator_pixel[i]: y_seperator_pixel[i + 1], :]
+            self._logger.info('added number in struct: {}'.format(digit_name))
 
     @timing_decorator
     def _update_velocity(self, player, new_velocity):
@@ -163,9 +166,9 @@ class BicycleRaceViewer(threading.Thread):
         """
         self._logger.info('volocity updated by controller({}: {})'.format(player, new_velocity))
         self._target_velocity[player] = new_velocity
-	#self._delta[player] = abs(self._target_velocity[player] - self._velocity[player])
-	#self._logger.info([d + 1 for d in self._delta])
-	#self._velocity_update_delay_sec = 0.2 / max([d + 1 for d in self._delta])
+        #self._delta[player] = abs(self._target_velocity[player] - self._velocity[player])
+        #self._logger.info([d + 1 for d in self._delta])
+        #self._velocity_update_delay_sec = 0.2 / max([d + 1 for d in self._delta])
         self._check_record(new_velocity)
 
     @timing_decorator
@@ -252,21 +255,23 @@ class BicycleRaceViewer(threading.Thread):
         self._logger.debug('in _update_speed_placements')
         for index in range(len(self._velocity)):
             bar_progress_offset = [0, self._map_velocity_to_bar_location(velocity=self._velocity[index])]
-            coordinates = map(sum, zip(cfg.VELOCITY_BAR_LOCATION[index], bar_progress_offset, self.VELOCITY_BAR_SPEED_OFFSET))
-            self._update_number_to_screen(self._velocity[index], coordinates, self.VELOCITY_DIGITS_SCALING)
+            #coordinates = map(sum, zip(cfg.VELOCITY_BAR_LOCATION[index], bar_progress_offset, self.VELOCITY_BAR_SPEED_OFFSET))
+            coordinates = map(sum, zip((cfg.VELOCITY_BAR_LOCATION[index][0], 0), bar_progress_offset, self.VELOCITY_BAR_SPEED_OFFSET))
+            color = self.PLAYER_1_COLOR if index == self.PLAYER_1 else self.PLAYER_2_COLOR
+            self._update_number_to_screen(self._velocity[index], coordinates, self.VELOCITY_DIGITS_SCALING, color)
 
     @timing_decorator
     def _update_number_to_screen(self, value, coordinates, scaling, color):
         self._logger.debug('in _update_number_to_screen')
-        digits_img = self._create_number_from_digits(self._number_to_digits(value), scaling, color)
+        digits_img = self._create_number_from_digits(digit_list=self._number_to_digits(value), scaling=scaling, color=color)
         digits_offset = self._calculate_digit_offset(digits_img)
-        digits_location = map(sum, zip(coordinates,digits_offset))
+        digits_location = map(sum, zip(coordinates, digits_offset))
         self._displayed_image = self._overlay(base_image=self._displayed_image,
                                               overlay_image=digits_img,
                                               location=tuple(digits_location))
 
     @timing_decorator
-    def _create_number_from_digits(self, digit_list, scaling=1):
+    def _create_number_from_digits(self, digit_list, color, scaling=1):
         """
         usage example
         num = self._create_number_from_digits([3,2, 0],1)
@@ -276,10 +281,11 @@ class BicycleRaceViewer(threading.Thread):
         :return:
         """
         # paste digits one nexto another and return one image
+        self._logger.debug('in _create_number_from_digits, color: {}'.format(color))
         max_h = 0
         total_w = 0
         for digit in digit_list:
-            digit_img = self._images_structures["digits/" + str(digit)]
+            digit_img = self._images_structures["digits-{}/".format(color) + str(digit)]
             h, w = digit_img.shape[:2]
             if h > max_h:
                 max_h = h
@@ -288,7 +294,7 @@ class BicycleRaceViewer(threading.Thread):
         num = np.zeros((max_h, total_w, 4), np.uint8)
         last_w = 0
         for digit in digit_list:
-            digit_img = self._images_structures["digits/" + str(digit)]
+            digit_img = self._images_structures["digits-{}/".format(color) + str(digit)]
             h, w = digit_img.shape[:2]
             num[:h, last_w:last_w + w] = digit_img
             last_w = last_w + w
@@ -327,7 +333,7 @@ class BicycleRaceViewer(threading.Thread):
     @timing_decorator
     def _update_velocity_bar(self):
         # update records
-        self._update_number_to_screen(self._daily_record,self.RECORD_DIGIT_LOCATION,0.5)
+        self._update_number_to_screen(value=self._daily_record, coordinates=self.RECORD_DIGIT_LOCATION, color=self.DAILY_RECORD_COLOR, scaling=0.5)
         # bar width + gradient
         self._update_velocity_bar_width()
         # bicycle logo placement
@@ -404,8 +410,8 @@ class BicycleRaceViewer(threading.Thread):
     def run(self):
         self._logger.info('starting main loop')
         self._running = True
-        #cv2.namedWindow('display', cv2.WND_PROP_FULLSCREEN)
-	cv2.namedWindow('display', cv2.WINDOW_OPENGL)
+        cv2.namedWindow('display', cv2.WND_PROP_FULLSCREEN)
+        #cv2.namedWindow('display', cv2.WINDOW_OPENGL)
 
         if cv2.__version__ > '2.4.9.1':
             cv2.setWindowProperty('display', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
