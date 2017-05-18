@@ -62,7 +62,9 @@ class BicycleRaceViewer(threading.Thread):
         self._images_structures = {}
         self._read_all_images(cfg.GRAPHICS_DICTIONARY)
         self._create_on_the_fly_images()  # create structures for graphics with no image (like velocity bar)
-        self._parse_combined_digits()
+        self._parse_combined_digits('digits_green')
+        self._parse_combined_digits('digits_yellow')
+        self._parse_combined_digits('digits_white')
 
         # hold the image that will be displayed on screen
         self._displayed_image = None
@@ -139,16 +141,16 @@ class BicycleRaceViewer(threading.Thread):
             self._logger.info("Record broke {}".format(player_speed))
 
     @timing_decorator
-    def _parse_combined_digits(self):
+    def _parse_combined_digits(self,filename):
         self._logger.info('in _parse_combined_digits')
-        combined_struct = self._images_structures['combined_digits/Numbers']
+        combined_struct = self._images_structures['combined_digits/{}'.format(filename)]
         x_len, y_len, z_len = combined_struct.shape
         self._logger.debug('combined digits graphics length: {}'.format(y_len))
 
         y_seperator_pixel = [0, 55, 80, 128, 173, 224, 266, 311, 355, 401, 452]
 
         for i in range(len(y_seperator_pixel) - 1):
-            digit_name = 'digits/{}'.format(i)
+            digit_name = '{}/{}'.format(filename,i)
             self._images_structures[digit_name] = combined_struct[:, y_seperator_pixel[i]: y_seperator_pixel[i + 1], :]
 
     @timing_decorator
@@ -224,8 +226,8 @@ class BicycleRaceViewer(threading.Thread):
         self._logger.debug('in _change_power_state, speed: {}, player: {}'.format(speed, player))
         for index, speed_threshold in enumerate(reversed(self.SPEED_STATE_THRESHOLDS)):
             if speed >= speed_threshold:
-                color = 'Green' if player == 0 else 'Green'  # TODO: change to yello when we have more graphics
-                image_name = 'states/{0} Watt-{1:02d}'.format(color, len(self.SPEED_STATE_THRESHOLDS) - index)
+                color = 'Green' if player == 0 else 'Yellow'  # TODO: change to yello when we have more graphics
+                image_name = 'states/Watt_{0}-{1:02d}'.format(color, len(self.SPEED_STATE_THRESHOLDS) - index)
                 self._logger.debug('returned power bar image: {}'.format(image_name))
                 return np.copy(self._images_structures[image_name])
 
@@ -254,9 +256,9 @@ class BicycleRaceViewer(threading.Thread):
             self._update_number_to_screen(self._velocity[index], coordinates, self.VELOCITY_DIGITS_SCALING)
 
     @timing_decorator
-    def _update_number_to_screen(self, value, coordinates, scaling):
+    def _update_number_to_screen(self, value, coordinates, scaling, color):
         self._logger.debug('in _update_number_to_screen')
-        digits_img = self._create_number_from_digits(self._number_to_digits(value), scaling)
+        digits_img = self._create_number_from_digits(self._number_to_digits(value), scaling, color)
         digits_offset = self._calculate_digit_offset(digits_img)
         digits_location = map(sum, zip(coordinates,digits_offset))
         self._displayed_image = self._overlay(base_image=self._displayed_image,
