@@ -1,5 +1,7 @@
 import threading
 
+import serial
+
 
 class BicycleController(threading.Thread):
     OPIDS  = {'DOWN_HILL': 0,
@@ -51,6 +53,15 @@ class BicycleController(threading.Thread):
 
 if __name__ == '__main__':
     pass
+    for port_try in TestChip.TcCommunication.get_serial_ports():
+        # print port_try
+        ser = serial.Serial(
+            port=port_try,
+            baudrate=9600,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS
+        )
     # find com ports
     # define com ports
     # start controller

@@ -340,10 +340,10 @@ if __name__ == '__main__':
     init_logging(logger_name='bicyclePlayer', logger_level=logging.DEBUG)
     #f = r'HD Test 1080P Full HD (Avatar).avi'
     #f = 'Jerusalem_Virtual_Ride_preview_01_140417.mp4'
-    f2 = 'GoPro_BMX_Bike_Riding_in_NYC_4.mp4'
-    f = 'part.avi'
+    f2 = 'movie.mp4'
+    f = 'movie.mp4'
     #f = 'part.mp4'
-    image = cv2.imread("mushroom.jpeg")
+    # image = cv2.imread("mushroom.jpeg")
     player = BicyclePlayer(overlay_debug=True)
     player.setDaemon(True)
     player.start()
