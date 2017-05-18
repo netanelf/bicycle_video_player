@@ -31,8 +31,11 @@
 #define BUTTON_1       3
 #define BUTTON_2       4
 #define IDENTIFICATION 5
+#define BUTTON_OP      6
+#define PING           7
 
-int DEVICE_ID;
+int DEVICE_ID; //this is a "semi-define" variable, set once in the setup phase
+int DEVICE_ID_MAP[8] = {0, 1, 10, 11, 20, 21, 30, 31}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
 
 int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
@@ -73,7 +76,7 @@ void setup() {
   pinMode(JUMPER_PIN_1,INPUT_PULLUP);
   pinMode(JUMPER_PIN_2,INPUT_PULLUP);
 
-  DEVICE_ID = 4 * digitalRead(JUMPER_PIN_2) + 2 * digitalRead(JUMPER_PIN_1) + 1 * digitalRead(JUMPER_PIN_0);
+  DEVICE_ID = DEVICE_ID_MAP[4 * digitalRead(JUMPER_PIN_2) + 2 * digitalRead(JUMPER_PIN_1) + 1 * digitalRead(JUMPER_PIN_0)];
 
   // initialize timer1 
   noInterrupts();           // disable all interrupts
@@ -107,18 +110,16 @@ void counter_write(byte op_id) {
     temp_data = coder_1_counter;
     coder_1_counter = 0;
     break;
-  case BUTTON_0 :
-    //TODO
+  case BUTTON_0 : case BUTTON_1 : case BUTTON_2 :
+    temp_data = op_id; //op_id at this stage is differet for each button, we set the data to this temp op_id, and the op id to a one that is common for all buttons
+    op_id = BUTTON_OP;
     break;  
-  case BUTTON_1 :
-    //TODO
-    break;  
-  case BUTTON_2 :
-    //TODO
-    break;  
-  case IDENTIFICATION:
+  case IDENTIFICATION :
     temp_data = DEVICE_ID;
     break;
+  case PING :
+    Serial.print("P\n");
+    return; //this one is differnt as we need to send only P, hence we return instead of doing the regular break and Serial prints below.
   }
   
   Serial.print(op_id);
@@ -233,6 +234,7 @@ void check_id_request() {
   }
   if (command_complete) {
       Serial.print(in_command+'\n');
+      if (in_command == "P")      counter_write(PING);
       if (in_command == "who_is") counter_write(IDENTIFICATION);
       if (in_command == "fan_0")  digitalWrite(FAN_PIN,STOP);
       if (in_command == "fan_1")  digitalWrite(FAN_PIN,START);
