@@ -8,9 +8,9 @@
 #define BUTTON_2_PIN   10
 #define FAN_PIN        11
 #define LOAD_PIN       12
-#define JUMPER_PIN_0   13 //DEVICE_ID LSB
-#define JUMPER_PIN_1   14 //...
-#define JUMPER_PIN_2   15 //DEVICE ID MSB
+#define JUMPER_PIN_0   14 //DEVICE_ID LSB
+#define JUMPER_PIN_1   15 //...
+#define JUMPER_PIN_2   16 //DEVICE ID MSB
 
 #define NUM_OF_CODERS 2
 
@@ -75,8 +75,12 @@ void setup() {
   pinMode(JUMPER_PIN_0,INPUT_PULLUP);
   pinMode(JUMPER_PIN_1,INPUT_PULLUP);
   pinMode(JUMPER_PIN_2,INPUT_PULLUP);
-
-  DEVICE_ID = DEVICE_ID_MAP[4 * digitalRead(JUMPER_PIN_2) + 2 * digitalRead(JUMPER_PIN_1) + 1 * digitalRead(JUMPER_PIN_0)];
+  delay(10);
+  int bit0 = digitalRead(JUMPER_PIN_0);
+  int bit1 = 2 * digitalRead(JUMPER_PIN_1);
+  int bit2 = 4 * digitalRead(JUMPER_PIN_2);
+  
+  DEVICE_ID = DEVICE_ID_MAP[bit0 + bit1 + bit2];
 
   // initialize timer1 
   noInterrupts();           // disable all interrupts
@@ -233,7 +237,6 @@ void check_id_request() {
     else                 in_command += in_char;
   }
   if (command_complete) {
-      Serial.print(in_command+'\n');
       if (in_command == "P")      counter_write(PING);
       if (in_command == "who_is") counter_write(IDENTIFICATION);
       if (in_command == "fan_0")  digitalWrite(FAN_PIN,STOP);
