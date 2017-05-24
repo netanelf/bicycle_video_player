@@ -1,18 +1,19 @@
 
 #define CODER_0_PIN_0  4
 #define CODER_0_PIN_1  5
-#define CODER_1_PIN_0  6
-#define CODER_1_PIN_1  7
-#define BUTTON_0_PIN   8
-#define BUTTON_1_PIN   9
-#define BUTTON_2_PIN   10
-#define FAN_PIN        11
-#define LOAD_PIN       12
+#define BUTTON_0_PIN   6
+#define BUTTON_1_PIN   7
+#define BUTTON_2_PIN   8
+#define SPARE_PIN_0    9
+#define FAN_PIN        10
+#define LOAD_PIN       11
+#define SPARE_PIN_1    12
 #define JUMPER_PIN_0   14 //DEVICE_ID LSB
 #define JUMPER_PIN_1   15 //...
-#define JUMPER_PIN_2   16 //DEVICE ID MSB
-
-#define NUM_OF_CODERS 2
+#define JUMPER_PIN_2   16 //...
+#define JUMPER_PIN_3   17 //DEVICE ID MSB
+#define SPARE_PIN_2    18
+#define SPARE_PIN_3    19
 
 #define ILLEGAL   0
 #define UP        1
@@ -26,29 +27,24 @@
 #define START HIGH
 
 #define CODER_0        0
-#define CODER_1        1
-#define BUTTON_0       2
-#define BUTTON_1       3
-#define BUTTON_2       4
+#define BUTTON_0       1
+#define BUTTON_1       2
+#define BUTTON_2       3
+#define PING           4
 #define IDENTIFICATION 5
-#define BUTTON_OP      6
-#define PING           7
+#define BUTTON_OP      6 //TODO: reconsider?
 
 int DEVICE_ID; //this is a "semi-define" variable, set once in the setup phase
-int DEVICE_ID_MAP[8] = {0, 1, 10, 11, 20, 21, 30, 31}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
+int DEVICE_ID_MAP[16] = {0, 1, 10, 11, 20, 21, 30, 31, 0, 0, 0, 0, 0, 0, 0, 0}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
 
 int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
 int poll_result_button_2 = 0x2;
 int poll_result_coder_0  = 0;
-int poll_result_coder_1  = 0;
-
 
 int coder_0_movement = ILLEGAL;
-int coder_1_movement = ILLEGAL;
 
 volatile unsigned int coder_0_counter = 0;
-volatile unsigned int coder_1_counter = 0;
 volatile unsigned int send_data = 0;
 
 char in_char;
@@ -62,8 +58,6 @@ void setup() {
   
   pinMode(CODER_0_PIN_0,INPUT_PULLUP);
   pinMode(CODER_0_PIN_1,INPUT_PULLUP);
-  pinMode(CODER_1_PIN_0,INPUT_PULLUP);
-  pinMode(CODER_1_PIN_1,INPUT_PULLUP);
   
   pinMode(BUTTON_0_PIN,INPUT_PULLUP);
   pinMode(BUTTON_1_PIN,INPUT_PULLUP);
@@ -75,12 +69,14 @@ void setup() {
   pinMode(JUMPER_PIN_0,INPUT_PULLUP);
   pinMode(JUMPER_PIN_1,INPUT_PULLUP);
   pinMode(JUMPER_PIN_2,INPUT_PULLUP);
-  delay(10);
-  int bit0 = digitalRead(JUMPER_PIN_0);
+  pinMode(JUMPER_PIN_3,INPUT_PULLUP);
+  
+  int bit0 = 1 * digitalRead(JUMPER_PIN_0);
   int bit1 = 2 * digitalRead(JUMPER_PIN_1);
   int bit2 = 4 * digitalRead(JUMPER_PIN_2);
-  
-  DEVICE_ID = DEVICE_ID_MAP[bit0 + bit1 + bit2];
+  int bit3 = 8 * digitalRead(JUMPER_PIN_3);
+
+  DEVICE_ID = DEVICE_ID_MAP[bit0 + bit1 + bit2 + bit3];
 
   // initialize timer1 
   noInterrupts();           // disable all interrupts
@@ -96,8 +92,7 @@ void setup() {
 void loop() {
   poll_inputs();
   if (send_data) {
-    if (NUM_OF_CODERS > 0) counter_write(CODER_0);
-    if (NUM_OF_CODERS > 1) counter_write(CODER_1);
+    counter_write(CODER_0);
     send_data = 0;
     check_id_request();
   }
@@ -109,10 +104,6 @@ void counter_write(byte op_id) {
   case CODER_0 : 
     temp_data = coder_0_counter;
     coder_0_counter = 0;
-    break;
-  case CODER_1 :
-    temp_data = coder_1_counter;
-    coder_1_counter = 0;
     break;
   case BUTTON_0 : case BUTTON_1 : case BUTTON_2 :
     temp_data = op_id; //op_id at this stage is differet for each button, we set the data to this temp op_id, and the op id to a one that is common for all buttons
@@ -139,22 +130,12 @@ ISR(TIMER1_OVF_vect) {      // interrupt service routine that wraps a user defin
 }
 
 void poll_inputs() {
-  if (NUM_OF_CODERS > 0) {
-    poll_result_coder_0 = poll_result_coder_0 << 2; //we are reading 2 bits every time so we should get |P1|P0|C1|C0|
-    poll_result_coder_0 = digitalRead(CODER_0_PIN_0) ? (poll_result_coder_0 | (0x1 << 0)) : (poll_result_coder_0 & ~(0x1 << 0));  
-    poll_result_coder_0 = digitalRead(CODER_0_PIN_1) ? (poll_result_coder_0 | (0x1 << 1)) : (poll_result_coder_0 & ~(0x1 << 1)); 
-    coder_0_movement = coder_LUT(poll_result_coder_0, 0);
-    if (coder_0_movement == DESIRED_DIRECTION_0) coder_0_counter++;
-  }
+  poll_result_coder_0 = poll_result_coder_0 << 2; //we are reading 2 bits every time so we should get |P1|P0|C1|C0|
+  poll_result_coder_0 = digitalRead(CODER_0_PIN_0) ? (poll_result_coder_0 | (0x1 << 0)) : (poll_result_coder_0 & ~(0x1 << 0));  
+  poll_result_coder_0 = digitalRead(CODER_0_PIN_1) ? (poll_result_coder_0 | (0x1 << 1)) : (poll_result_coder_0 & ~(0x1 << 1)); 
+  coder_0_movement = coder_LUT(poll_result_coder_0);
+  if (coder_0_movement == DESIRED_DIRECTION_0) coder_0_counter++;
   
-  if (NUM_OF_CODERS > 1) {
-    poll_result_coder_1 = poll_result_coder_1 << 2; //we are reading 2 bits every time so we should get |P1|P0|C1|C0|
-    poll_result_coder_1 = digitalRead(CODER_1_PIN_0) ? (poll_result_coder_1 | (0x1 << 0)) : (poll_result_coder_1 & ~(0x1 << 0));  
-    poll_result_coder_1 = digitalRead(CODER_1_PIN_1) ? (poll_result_coder_1 | (0x1 << 1)) : (poll_result_coder_1 & ~(0x1 << 1)); 
-    coder_1_movement = coder_LUT(poll_result_coder_1, 1);
-    if (coder_1_movement == DESIRED_DIRECTION_1) coder_1_counter++;    
-  }
-
   poll_result_button_0 << 1;
   poll_result_button_0 = digitalRead(BUTTON_0_PIN) ? (poll_result_button_0 | 0x1) : (poll_result_button_0 & ~0x1);
   poll_result_button_1 << 1;
@@ -167,9 +148,9 @@ void poll_inputs() {
   if (poll_result_button_2 == 0x1) counter_write(BUTTON_2);
 }
 
-int coder_LUT(int poll_result, int coder_id) {
+int coder_LUT(int poll_result) {
   int coder_movement;
-    switch (poll_result & 0xF) {
+  switch (poll_result & 0xF) {
 /*  case 0x0:  //00_00
       break;          */
     case 0x1:  //00_01
@@ -180,8 +161,7 @@ int coder_LUT(int poll_result, int coder_id) {
       break;
     case 0x3:  //00_11
       coder_movement = ILLEGAL;
-      if (coder_id == 0) poll_result_coder_0 >> 2;
-      if (coder_id == 1) poll_result_coder_1 >> 2;
+      poll_result_coder_0 >> 2;
       break;
     case 0x4:  //01_00
       coder_movement = DOWN;
@@ -190,8 +170,7 @@ int coder_LUT(int poll_result, int coder_id) {
       break;          */
     case 0x6:  //01_10
       coder_movement = ILLEGAL;
-      if (coder_id == 0) poll_result_coder_0 >> 2;
-      if (coder_id == 1) poll_result_coder_1 >> 2;
+      poll_result_coder_0 >> 2;
       break;
     case 0x7:  //01_11
       coder_movement = UP;
@@ -201,8 +180,7 @@ int coder_LUT(int poll_result, int coder_id) {
       break;
     case 0x9:  //10_01
       coder_movement = ILLEGAL;
-      if (coder_id == 0) poll_result_coder_0 >> 2;
-      if (coder_id == 1) poll_result_coder_1 >> 2;
+      poll_result_coder_0 >> 2;
       break;
 /*  case 0xA:  //10_10
       break;          */
@@ -211,8 +189,7 @@ int coder_LUT(int poll_result, int coder_id) {
       break;
     case 0xC:  //11_00
       coder_movement = ILLEGAL;
-      if (coder_id == 0) poll_result_coder_0 >> 2;
-      if (coder_id == 1) poll_result_coder_1 >> 2;
+      poll_result_coder_0 >> 2;
       break;
     case 0xD:  //11_01
       coder_movement = DOWN;
