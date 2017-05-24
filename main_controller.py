@@ -77,7 +77,7 @@ class main_controller():
         elif (player_type == 2):
             return (BrakePlayer(), player_number)
         elif (player_type == 3):
-            from bicycle_race_controller import BicycleRaceController 
+            from race_display.bicycle_race_controller import BicycleRaceController 
             return (BicycleRaceController(), player_number)
         else:
             raise Exception('could not get identification from arduino')

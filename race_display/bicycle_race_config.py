@@ -1,5 +1,5 @@
 
-GRAPHICS_DICTIONARY = 'bicycle_race_sample_pics'
+GRAPHICS_DICTIONARY = 'race_display/bicycle_race_sample_pics'
 
 # Velocity Bar
 VELOCITY_BAR_LOCATION = ((154, 438), (350, 438))  # upper left pixel ((player_1_x, player_1_y), (player_2_x, player_2_y))
