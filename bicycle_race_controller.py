@@ -1,4 +1,4 @@
-from time import sleep
+import time
 import threading
 import logging
 from bicycle_race_viewer import BicycleRaceViewer
@@ -10,7 +10,7 @@ class BicycleRaceController(threading.Thread):
     # PORT = '/dev/ttyUSB0' #'COM40'
     # BAUDRATE = 9600
 
-    def __init__(self,serial):
+    def __init__(self):
         self._logger = logging.getLogger(self.__class__.__name__)
         super(BicycleRaceController, self).__init__()
         self._viewer = BicycleRaceViewer()
@@ -19,55 +19,21 @@ class BicycleRaceController(threading.Thread):
 
         #TODO:  this should be fixed in BicycleRaceViewer, if no initial speed is given nothing is shown
         self._viewer._update_velocity(player=0, new_velocity=1)
-        self._serial = serial
-        # self._serial = serial.Serial(port=self.PORT,
-        #                              baudrate=self.BAUDRATE,
-        #                              bytesize=serial.EIGHTBITS,
-        #                              stopbits=serial.STOPBITS_ONE,
-        #                              parity=serial.PARITY_NONE,
-        #                              writeTimeout=2,
-        #                              timeout=self.READ_TIMEOUT)
-        # try:
-        #     self._serial.open()
-        # except Exception as ex:
-        #     self._logger.error(ex)
+
         self._logger.info('finished init')
 
     def run(self):
         while True:
-            instruction = self.read_serial_data()
-            self.update_values(instruction)
+            #instruction = self.read_serial_data()
+            #self.update_values(instruction)
+            time.sleep(1)
 
-    def read_serial_data(self):
-        reading = True
-        raw_data = []
-        while reading:
-            try:
-                d = self._serial.read(size=1)
-                if d == '\n':
-                    reading = False
-                elif d != '':
-                    raw_data.append(d)
-
-            except Exception as ex:
-                self._logger.error(ex)
-
-        self._logger.debug(raw_data)
-
-        op_id = int(raw_data[0])
-        data = raw_data[1:]
-        self._logger.debug('op_id: {}, data: {}'.format(op_id, data))
-
-        return (op_id, data)
-
-    def update_values(self, instruction):
-        op_id, data = instruction
-        if op_id in (0, 1):
-            player = op_id
-            encoder_delta = int(''.join(data))
-            self._logger.debug('player: {}, encoder: {}'.format(player, encoder_delta))
-            self._viewer._update_velocity(player=player, new_velocity=encoder_delta / 100)
-
+    def update_encoder(self, player_id, encoder_delta):
+        new_velocity = encoder_delta / 100  # TODO: this should come from configuration file
+        self.update_speed(player_id, new_velocity)
+    
+    def update_speed(self, player_id, speed):
+        self._viewer._update_velocity(player=player_id, new_velocity=speed)
 
     def update_race_viewer(self, new_configuration):
         pass
@@ -81,6 +47,6 @@ if __name__ == '__main__':
     controller.start()
 
     while controller.is_alive():
-        sleep(1)
+        time.sleep(1)
 
 
