@@ -28,8 +28,12 @@ class main_controller():
         serial_found = 0
         ports = self.get_serial_ports()
         
+        self.player = None
+        self.serial_reader = {}
+        self.serial_writer = {}
         self.serial_connections = {}  # player_number: serial_conn
         for port_try in ports:
+            print port_try
             s = serial.Serial(
                 port=port_try,
                 baudrate=9600,
@@ -39,28 +43,37 @@ class main_controller():
                 timeout=2
             )
             s.flush()
+            time.sleep(2)
             s.write(self.PING)
-            time.sleep(1)
-            if self.PING.strip() in s.read_all().split('\n'):
-                (self.player, player_number) = self.get_player(s)
-                self.player.setDaemon(True)
-                self.player.start()
+            time.sleep(2)
+            response = s.read_all().split('\n')
+            print response
+            if self.PING.strip() in response:
+                print port_try
+                (player, player_number) = self.get_player(s)
+                if not self.player:
+                    self.player = player             
+                    self.player.setDaemon(True)
+                    self.player.start()
                 self.serial_connections[player_number] = s
                 
         if len(self.serial_connections) == 0:
             raise Exception("No Arduino detected!!")
         
-        self.serial_reader = SerialReader(self.player, self.serial_connections)
-        self.serial_writer = SerialWriter(self.player, self.serial_connections)
-        self.serial_reader.setDaemon(True)
-        self.serial_writer.setDaemon(True)
-        self.serial_reader.start()
-        self.serial_writer.start()
+        for (conn_id, connection) in self.serial_connections.items():
+            self.serial_reader[conn_id] = SerialReader(self.player, conn_id, connection)
+            self.serial_writer[conn_id] = SerialWriter(self.player, conn_id, connection)
+            self.serial_reader[conn_id] .setDaemon(True)
+            self.serial_writer[conn_id] .setDaemon(True)
+            self.serial_reader[conn_id] .start()
+            self.serial_writer[conn_id] .start()
 
     def get_player(self, serial_conn):
         print 'in get_player'
+        serial_conn.flush()
+        time.sleep(2)
         serial_conn.write(self.WHO_IS_COMMAND)
-        time.sleep(1)
+        time.sleep(2)
         data = serial_conn.read_all().split('\n')
         print data
         for d in data:
@@ -100,8 +113,8 @@ class main_controller():
                 s = serial.Serial(port)
                 s.close()
                 result.append(port)
-            except (OSError, serial.SerialException):
-                pass
+            except (OSError, serial.SerialException) as ex:
+                print 'got exception: {}'.format(ex)
             except Exception as ex:
                 print 'got exception: {}'.format(ex)
         return result
@@ -110,24 +123,25 @@ class SerialReader(thread):
     ENCODER = 0  #todo
     KAFTOR2 = 9  #todo
 
-    def __init__(self,player, serial_connections):
+    def __init__(self,player, conn_id, serial_connection):
         self._logger = logging.getLogger(self.__class__.__name__)
         super(SerialReader, self).__init__()
         self.player = player
-        self.serial_connections = serial_connections
+        self.conn_id = conn_id
+        self.serial_connection = serial_connection
+        self.serial_connection.flush()
 
     def run(self):
         while 1:
-            for (id, connection) in self.serial_connections.items():
-                opid, data = self.read_serial_data(serial_conn=connection)
+            opid, data = self.read_serial_data(serial_conn=self.serial_connection)
 
-                if opid == self.ENCODER:
-                    encoder_delta = int(''.join(data))
-                    self.player.update_encoder(id, encoder_delta)
+            if opid == self.ENCODER:
+                encoder_delta = int(''.join(data))
+                self.player.update_encoder(self.conn_id, encoder_delta)
 
-                if opid == self.KAFTOR2:
-                    self.player.do_kaftor(self.KAFTOR2)
-                    self.read_serial()
+            if opid == self.KAFTOR2:
+                self.player.do_kaftor(self.KAFTOR2)
+                self.read_serial()
     
     def read_serial_data(self, serial_conn):
         reading = True
@@ -153,7 +167,7 @@ class SerialReader(thread):
 
 class SerialWriter(thread):
 
-    def __init__(self,player, serial):
+    def __init__(self,player, id, serial):
         super(SerialWriter, self).__init__()
         self.serial = serial
         self.player = player
