@@ -1,7 +1,7 @@
 from main_controller import VlcPlayer
 
 
-class BrakePlayer(VlcPlayer):
+class BrakeController(VlcPlayer):
     CFG = 0 #todo
     MOVIE = "" #todo
 

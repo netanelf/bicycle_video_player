@@ -3,7 +3,7 @@ import threading
 import serial
 
 
-class BicycleController(threading.Thread):
+class TourController(threading.Thread):
     OPIDS  = {'DOWN_HILL': 0,
               'UP_HILL': 1,
               'MISHOR': 2

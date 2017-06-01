@@ -1,19 +1,15 @@
-from threading import Thread as thread
-import logging
-from logging.handlers import RotatingFileHandler
-from datetime import datetime
 import glob
-import sys
+import logging
+import os
 import serial
+import sys
+import time
+from datetime import datetime
+from logging.handlers import RotatingFileHandler
+from threading import Thread as thread
 
 import generated_vlc as vlc
-import os
-import time
-
-#from brake_player import  BrakePlayer
-#from bicycle_controller import BicycleController
-#from bicycle_race_controller import BicycleRaceController
-#from history_player import HistoryPlayer
+from history_exhibit.history_controller import HistoryController
 
 
 class main_controller():
@@ -84,14 +80,17 @@ class main_controller():
                 print 'found player: {}, number: {}'.format(player_type, player_number)
 
         if (player_type == 0):
-            return (BicycleRaceController(), player_number)
+            from history_exhibit.history_controller import HistoryController
+            return (HistoryController(), player_number)
         elif (player_type == 1):
-            return (BicycleController(), player_number)
+            from tour_exhibit.tour_controller import TourController
+            return (TourController(), player_number)
         elif (player_type == 2):
-            return (BrakePlayer(), player_number)
+            from brake_exhibit.brake_controller import BrakeController
+            return (BrakeController(), player_number)
         elif (player_type == 3):
-            from race_display.bicycle_race_controller import BicycleRaceController 
-            return (BicycleRaceController(), player_number)
+            from race_exhibit.race_controller import RaceController
+            return (RaceController(), player_number)
         else:
             raise Exception('could not get identification from arduino')
 

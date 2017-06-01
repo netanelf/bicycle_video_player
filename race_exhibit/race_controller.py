@@ -5,14 +5,14 @@ from bicycle_race_viewer import BicycleRaceViewer
 import serial
 
 
-class BicycleRaceController(threading.Thread):
+class RaceController(threading.Thread):
     # READ_TIMEOUT = 2
     # PORT = '/dev/ttyUSB0' #'COM40'
     # BAUDRATE = 9600
 
     def __init__(self):
         self._logger = logging.getLogger(self.__class__.__name__)
-        super(BicycleRaceController, self).__init__()
+        super(RaceController, self).__init__()
         self._viewer = BicycleRaceViewer()
         self._viewer.setDaemon(True)
         self._viewer.start()
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     from bicycle_player import init_logging
     init_logging(logger_name='BicycleRaceController', logger_level=logging.INFO)
 
-    controller = BicycleRaceController()
+    controller = RaceController()
     controller.setDaemon(True)
     controller.start()
 

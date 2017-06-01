@@ -1,7 +1,7 @@
 from main_controller import VlcPlayer
 
 
-class HistoryPlayer(VlcPlayer):
+class HistoryController(VlcPlayer):
     CFG = 0 #todo
     MOVIE = "" #todo
 
