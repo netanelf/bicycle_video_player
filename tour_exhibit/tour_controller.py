@@ -51,6 +51,14 @@ class TourController(threading.Thread):
 
         return (op_id, data)
 
+    def do_kaftor(self,kaftor_number):
+        #TODO
+        pass
+
+    def has_send(self):
+        #TODO
+        pass
+
 
 
 # if __name__ == '__main__':

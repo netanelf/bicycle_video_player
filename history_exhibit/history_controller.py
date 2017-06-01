@@ -14,3 +14,11 @@ class HistoryController(VlcPlayer):
         while True:
             pass
             # use self.speed
+
+    def do_kaftor(self,kaftor_number):
+        #TODO
+        pass
+
+    def has_send(self):
+        #TODO
+        pass

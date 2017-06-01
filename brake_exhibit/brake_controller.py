@@ -21,3 +21,7 @@ class BrakeController(VlcPlayer):
     def has_send(self):
         pass
         # read time/ frame
+
+    def do_kaftor(self,kaftor_number):
+        #TODO
+        pass
