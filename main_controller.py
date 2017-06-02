@@ -180,26 +180,29 @@ class SerialWriter(thread):
 
 class VlcPlayer(thread):
 
-    def __init__(self):
+    def __init__(self, num_of_mps=1):
         self.mp = vlc.MediaPlayer
         self.instance = self.mp.get_instance()
 
-    def load_movie(self,file):
+    def load_movie(self,file,media_sel=0):
         self.mp.set_media(self.instance.media_new(os.path.expanduser(file)))
 
-    def play(self):
+    def play(self,media_sel=0):
         self.mp.play()
 
-    def pause(self):
+    def pause(self,media_sel=0):
         self.mp.pause()
 
-    def update_speed(self,new_speed):
+    def update_speed(self,new_speed,media_sel=0):
         self.mp.set_rate(new_speed)
 
     def has_send(self):
         raise NotImplementedError()
 
     def do_kaftor(self,kaftor_number):
+        raise NotImplementedError()
+
+    def update_encoder(self, player_id, encoder_data):
         raise NotImplementedError()
 
 

@@ -22,3 +22,7 @@ class HistoryController(VlcPlayer):
     def has_send(self):
         #TODO
         pass
+
+    def update_encoder(self, player_id, encoder_data):
+        #TODO
+        pass

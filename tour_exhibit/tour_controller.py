@@ -51,6 +51,7 @@ class TourController(threading.Thread):
 
         return (op_id, data)
 
+
     def do_kaftor(self,kaftor_number):
         #TODO
         pass
@@ -59,7 +60,9 @@ class TourController(threading.Thread):
         #TODO
         pass
 
-
+    def update_encoder(self, player_id, encoder_data):
+        #TODO
+        pass
 
 # if __name__ == '__main__':
 #     pass
