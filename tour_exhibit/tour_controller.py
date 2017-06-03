@@ -22,19 +22,42 @@ class TourController(VlcPlayer):
         # load movie associated with each route
         # initialize player
         
-        self.alive = True
+        self._alive = True
+        self._speed = 0
+        self._is_playing = False
+        #TODO: I think __init__ should get the player_number as well and decide which movie to play (front/ back)
+        self.load_movie(file=cfg.SCENES['default']['front_movie'])
         self._logger.info('finished initializing TourController')
-
+    
     def run(self):
-        while self.alive:
-            time.sleep(0.5)
+        while self._alive:
+            if self._speed > cfg.SPEED_THRESHOLD and self._is_playing == False:
+                self._start_graduel_playing()
+            
+            if self._speed <= cfg.SPEED_THRESHOLD and self._is_playing == True:
+                self._start_graduel_stopping()     
             #self.read_serial_data()
             # if we are not playing, change played movie
             ## button press
 
             # if frame number changes the load/fan state --> send data to arduino
             # set speed according to data
-
+    
+    def _start_graduel_playing(self):
+        self._logger.info('in _start_graduel_playing ')
+        self._is_playing = True
+        self.play()
+        for (delta_t, speed) in cfg.SPEED_UP_RAMPING:
+            self._logger.debug('setting speed = {}'.format(speed))
+            self.update_speed(new_speed=speed)
+            time.sleep(delta_t)
+        self.update_speed(new_speed=1)
+        
+    def _start_graduel_stopping(self):
+        self._logger.info('in _start_graduel_stopping ')
+        self._is_playing = False
+        self.pause()
+        
     def send_serial_data(self, opid):
         # 3 states of DOWN_HILL/ UP_HILL / MISHOR
         pass
@@ -48,9 +71,9 @@ class TourController(VlcPlayer):
         pass
 
     def update_encoder(self, player_id, encoder_data):
-        #TODO
-        pass
-
+        self._logger.debug('in update_encoder, player_id= {}, encoder_data= {}'.format(player_id, encoder_data))
+        self._speed = encoder_data / float(cfg.ENCODER_TO_SPEED_CONVERSION)
+        
         
 def init_logging(log_name, logger_level):
     logger = logging.getLogger()
@@ -72,9 +95,14 @@ if __name__ == '__main__':
     from logging.handlers import RotatingFileHandler
     import os
     from datetime import datetime
-    init_logging('tour_controller', logging.INFO)
+    init_logging('tour_controller', logging.DEBUG)
     p = TourController()
     p.setDaemon(True)
     p.start()
-    time.sleep(3)
-    
+    time.sleep(2)
+    p.update_encoder(player_id=0, encoder_data=3000)
+    time.sleep(4)
+    p.update_encoder(player_id=0, encoder_data=1001)
+    time.sleep(4)
+    p.update_encoder(player_id=0, encoder_data=500)
+    time.sleep(4)
