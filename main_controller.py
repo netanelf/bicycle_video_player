@@ -197,6 +197,13 @@ class VlcPlayer(thread):
     def update_speed(self,new_speed,media_sel=0):
         self.mp.set_rate(new_speed)
 
+    def get_time(self):
+        """
+        get time in movie
+        @return: time [mS]
+        """
+        return self.mp.get_time()
+
     def has_send(self):
         raise NotImplementedError()
 
