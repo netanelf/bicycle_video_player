@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from threading import Thread as thread
 
 import generated_vlc as vlc
-from history_exhibit.history_controller import HistoryController
+#from history_exhibit.history_controller import HistoryController
 
 
 class main_controller():
@@ -181,7 +181,8 @@ class SerialWriter(thread):
 class VlcPlayer(thread):
 
     def __init__(self, num_of_mps=1):
-        self.mp = vlc.MediaPlayer
+        super(VlcPlayer, self).__init__()
+        self.mp = vlc.MediaPlayer()
         self.instance = self.mp.get_instance()
 
     def load_movie(self,file,media_sel=0):

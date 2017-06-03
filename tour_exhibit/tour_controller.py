@@ -1,24 +1,34 @@
-import threading
+import logging
+try:
+    from main_controller import VlcPlayer
+except ImportError:
+    import sys
+    sys.path.append('..')
+    from main_controller import VlcPlayer
+import tour_config as cfg
+import time
 
-import serial
 
-
-class TourController(threading.Thread):
+class TourController(VlcPlayer):
     OPIDS  = {'DOWN_HILL': 0,
               'UP_HILL': 1,
               'MISHOR': 2
               }
 
-    def __init__(self, serial):
+    def __init__(self):
+        super(TourController, self).__init__()
+        self._logger = logging.getLogger(self.__class__.__name__)
         # initialize list of topographies
         # load movie associated with each route
         # initialize player
-        pass
+        
+        self.alive = True
+        self._logger.info('finished initializing TourController')
 
     def run(self):
         while self.alive:
-
-            self.read_serial_data()
+            time.sleep(0.5)
+            #self.read_serial_data()
             # if we are not playing, change played movie
             ## button press
 
@@ -28,29 +38,6 @@ class TourController(threading.Thread):
     def send_serial_data(self, opid):
         # 3 states of DOWN_HILL/ UP_HILL / MISHOR
         pass
-
-    def read_serial_data(self):
-        reading = True
-        raw_data = []
-        while reading:
-            try:
-                d = self._serial.read(size=1)
-                if d == '\n':
-                    reading = False
-                elif d != '':
-                    raw_data.append(d)
-
-            except Exception as ex:
-                self._logger.error(ex)
-
-        self._logger.debug(raw_data)
-
-        op_id = int(raw_data[0])
-        data = raw_data[1:]
-        self._logger.debug('op_id: {}, data: {}'.format(op_id, data))
-
-        return (op_id, data)
-
 
     def do_kaftor(self,kaftor_number):
         #TODO
@@ -64,17 +51,30 @@ class TourController(threading.Thread):
         #TODO
         pass
 
-# if __name__ == '__main__':
-#     pass
-#     for port_try in TestChip.TcCommunication.get_serial_ports():
-#         # print port_try
-#         ser = serial.Serial(
-#             port=port_try,
-#             baudrate=9600,
-#             parity=serial.PARITY_NONE,
-#             stopbits=serial.STOPBITS_ONE,
-#             bytesize=serial.EIGHTBITS
-#         )
-#     # find com ports
-#     # define com ports
-#     # start controller
+        
+def init_logging(log_name, logger_level):
+    logger = logging.getLogger()
+    s_handler = logging.StreamHandler()
+    f_handler = RotatingFileHandler(filename=os.path.join('..', 'logs', '{}_{}.log'
+                                            .format(log_name, datetime.now()
+                                                    .strftime('%d-%m-%y_%H-%M-%S'))),
+                                    maxBytes=10E6,
+                                    backupCount=500)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    s_handler.setFormatter(formatter)
+    f_handler.setFormatter(formatter)
+    logger.addHandler(s_handler)
+    logger.addHandler(f_handler)
+    logger.setLevel(logger_level)
+    
+if __name__ == '__main__':
+    from logging.handlers import RotatingFileHandler
+    import os
+    from datetime import datetime
+    init_logging('tour_controller', logging.INFO)
+    p = TourController()
+    p.setDaemon(True)
+    p.start()
+    time.sleep(3)
+    
