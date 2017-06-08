@@ -79,16 +79,16 @@ class main_controller():
                 player_number = int(d[2])
                 print 'found player: {}, number: {}'.format(player_type, player_number)
 
-        if (player_type == 0):
+        if (player_type == 1):
             from history_exhibit.history_controller import HistoryController
             return (HistoryController(), player_number)
-        elif (player_type == 1):
-            from tour_exhibit.tour_controller import TourController
-            return (TourController(), player_number)
         elif (player_type == 2):
+            from tour_exhibit.tour_controller import TourController
+            return (TourController(player_number=player_number), player_number)
+        elif (player_type == 3):
             from brake_exhibit.brake_controller import BrakeController
             return (BrakeController(), player_number)
-        elif (player_type == 3):
+        elif (player_type == 4):
             from race_exhibit.race_controller import RaceController
             return (RaceController(), player_number)
         else:

@@ -18,7 +18,7 @@ class TourController(VlcPlayer):
              'MISHOR': 2
              }
 
-    def __init__(self):
+    def __init__(self, player_number):
         super(TourController, self).__init__()
         self._logger = logging.getLogger(self.__class__.__name__)
         # initialize list of topographies
@@ -30,7 +30,13 @@ class TourController(VlcPlayer):
         self._is_playing = False
         #self._current_topography = None
         # TODO: I think __init__ should get the player_number as well and decide which movie to play (front/ back)
-        self.load_movie(file=cfg.SCENES['default']['front_movie'])
+        if player_number == 0:
+            self.load_movie(file=cfg.SCENES['default']['front_movie'])
+        elif player_number == 1:
+            self.load_movie(file=cfg.SCENES['default']['back_movie'])
+        else:
+            self._logger.error('Wrong player number ({})'.format(player_number))
+
         self._logger.info('finished initializing TourController')
     
     def run(self):
