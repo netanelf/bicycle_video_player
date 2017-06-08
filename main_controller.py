@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from threading import Thread as thread
-
+import Queue
 import generated_vlc as vlc
 #from history_exhibit.history_controller import HistoryController
 
@@ -118,6 +118,7 @@ class main_controller():
                 print 'got exception: {}'.format(ex)
         return result
 
+
 class SerialReader(thread):
     ENCODER = 0  #todo
     KAFTOR2 = 9  #todo
@@ -165,18 +166,22 @@ class SerialReader(thread):
 
         return (op_id, data)
 
+
 class SerialWriter(thread):
 
-    def __init__(self,player, id, serial):
+    def __init__(self, player, id, serial):
         super(SerialWriter, self).__init__()
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.serial = serial
         self.player = player
+        self._logger.info('initialized SerialWriter')
 
     def run(self):
-        while(1):
+        while True:
             time.sleep(1)
-        #if self.player.has_send():
-        #    self.serial.send(self.player.send_data)
+            d = self.player.data_to_send.get()
+            self._logger.debug('got data to send: {}'.format(d))
+            self.serial.write(d + '\n')
 
 
 class VlcPlayer(thread):
@@ -185,6 +190,7 @@ class VlcPlayer(thread):
         super(VlcPlayer, self).__init__()
         self.mp = vlc.MediaPlayer()
         self.instance = self.mp.get_instance()
+        self.data_to_send = Queue.Queue()
 
     def load_movie(self,file,media_sel=0):
         self.mp.set_media(self.instance.media_new(os.path.expanduser(file)))
@@ -223,9 +229,6 @@ class VlcPlayer(thread):
             self._logger.debug('setting speed = {}'.format(speed))
             self.update_speed(new_speed=speed)
             time.sleep(delta_t)
-
-    def has_send(self):
-        raise NotImplementedError()
 
     def do_kaftor(self,kaftor_number):
         raise NotImplementedError()
