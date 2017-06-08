@@ -35,7 +35,7 @@
 #define BUTTON_OP      6 //TODO: reconsider?
 
 int DEVICE_ID; //this is a "semi-define" variable, set once in the setup phase
-int DEVICE_ID_MAP[16] = {10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
+int DEVICE_ID_MAP[16] = {10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 21}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
 
 int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
@@ -136,11 +136,11 @@ void poll_inputs() {
   coder_0_movement = coder_LUT(poll_result_coder_0);
   if (coder_0_movement == DESIRED_DIRECTION_0) coder_0_counter++;
   
-  poll_result_button_0 << 1;
+  poll_result_button_0 = poll_result_button_0 << 1;
   poll_result_button_0 = digitalRead(BUTTON_0_PIN) ? (poll_result_button_0 | 0x1) : (poll_result_button_0 & ~0x1);
-  poll_result_button_1 << 1;
+  poll_result_button_1 = poll_result_button_1 << 1;
   poll_result_button_1 = digitalRead(BUTTON_1_PIN) ? (poll_result_button_1 | 0x1) : (poll_result_button_1 & ~0x1);
-  poll_result_button_2 << 1;
+  poll_result_button_2 = poll_result_button_2 << 1;
   poll_result_button_2 = digitalRead(BUTTON_2_PIN) ? (poll_result_button_2 | 0x1) : (poll_result_button_2 & ~0x1);
   
   if (poll_result_button_0 == 0x1) counter_write(BUTTON_0);

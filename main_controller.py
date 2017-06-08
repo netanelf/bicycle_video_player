@@ -121,7 +121,7 @@ class main_controller():
 
 class SerialReader(thread):
     ENCODER = 0  #todo
-    KAFTOR2 = 9  #todo
+    BUTTON  = 6  #todo
 
     def __init__(self,player, conn_id, serial_connection):
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -133,16 +133,15 @@ class SerialReader(thread):
         self._logger.info('initialized SerialReader')
 
     def run(self):
-        while 1:
+        while True:
             opid, data = self.read_serial_data(serial_conn=self.serial_connection)
 
             if opid == self.ENCODER:
                 encoder_delta = int(''.join(data))
                 self.player.update_encoder(self.conn_id, encoder_delta)
 
-            if opid == self.KAFTOR2:
-                self.player.do_kaftor(self.KAFTOR2)
-                self.read_serial()
+            if opid == self.BUTTON:
+                self.player.do_kaftor(data)
     
     def read_serial_data(self, serial_conn):
         reading = True

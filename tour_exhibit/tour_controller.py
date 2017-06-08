@@ -22,9 +22,7 @@ class TourController(VlcPlayer):
         super(TourController, self).__init__()
         self._logger = logging.getLogger(self.__class__.__name__)
 
-        self._alive = True
         self._speed = 0
-        self._is_playing = False
 
         if player_number == 0:
             self.load_movie(file=cfg.SCENES['default']['front_movie'])
@@ -63,8 +61,6 @@ class TourController(VlcPlayer):
             # if we are not playing, change played movie
             ## button press
 
-            # if frame number changes the load/fan state --> send data to arduino
-            # set speed according to data
             time.sleep(0.05)
 
     def _start_paused_movie(self):
@@ -95,29 +91,18 @@ class TourController(VlcPlayer):
             self._logger.error('unknown topography ({})'.format(topography))
 
     def _start_gradual_playing(self):
-        self._logger.info('in _start_graduel_playing ')
-        self._is_playing = True
+        self._logger.info('in _start_gradual_playing ')
         self.play()
         self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING)
         self.update_speed(new_speed=1)
         
     def _start_gradual_stopping(self):
         self._logger.info('in _start_gradual_stopping ')
-        self._is_playing = False
         self.gradual_speed_change(steps=cfg.SPEED_DOWN_RAMPING)
         self.pause()
-        
-    def send_serial_data(self, opid):
-        # 3 states of DOWN_HILL/ UP_HILL / MISHOR
-        pass
 
     def do_kaftor(self, kaftor_number):
-        #TODO
-        pass
-
-    def has_send(self):
-        #TODO
-        pass
+        self._logger.info('button {} was pushed'.format(kaftor_number))
 
     def update_encoder(self, player_id, encoder_data):
         self._logger.debug('in update_encoder, player_id= {}, encoder_data= {}'.format(player_id, encoder_data))
