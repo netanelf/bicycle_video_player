@@ -35,7 +35,7 @@
 #define BUTTON_OP      6 //TODO: reconsider?
 
 int DEVICE_ID; //this is a "semi-define" variable, set once in the setup phase
-int DEVICE_ID_MAP[16] = {0, 1, 10, 11, 20, 21, 30, 31, 40, 41, 42, 43, 44, 45, 0, 30}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
+int DEVICE_ID_MAP[16] = {10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
 
 int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
