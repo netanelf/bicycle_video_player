@@ -191,15 +191,19 @@ class VlcPlayer(thread):
         self.mp = vlc.MediaPlayer()
         self.instance = self.mp.get_instance()
         self.data_to_send = Queue.Queue()
+        self._is_playing = False
+        self._alive = True
 
     def load_movie(self,file,media_sel=0):
         self.mp.set_media(self.instance.media_new(os.path.expanduser(file)))
 
     def play(self,media_sel=0):
         self.mp.play()
+        self._is_playing = True
 
     def pause(self,media_sel=0):
         self.mp.pause()
+        self._is_playing = False
 
     def update_speed(self,new_speed,media_sel=0):
         self.mp.set_rate(new_speed)
