@@ -47,11 +47,13 @@ class TourController(VlcPlayer):
             t = self.get_time()
             self._logger.debug('time: {}'.format(t))
 
-            if current_topography_index < len(topography_keys):
-                if t >= topography_keys[current_topography_index + 1]:  # we just passed to next topography
-                    current_topography_index += 1
-                    self._set_topography(topography_struct[topography_keys[current_topography_index]])
-
+            try:
+                if current_topography_index < len(topography_keys):
+                    if t >= topography_keys[current_topography_index + 1]:  # we just passed to next topography
+                        current_topography_index += 1
+                        self._set_topography(topography_struct[topography_keys[current_topography_index]])
+            except Exception:
+                pass
 
 
             #self.read_serial_data()
@@ -69,19 +71,13 @@ class TourController(VlcPlayer):
         self._logger.info('in _start_graduel_playing ')
         self._is_playing = True
         self.play()
-        for (delta_t, speed) in cfg.SPEED_UP_RAMPING:
-            self._logger.debug('setting speed = {}'.format(speed))
-            self.update_speed(new_speed=speed)
-            time.sleep(delta_t)
+        self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING)
         self.update_speed(new_speed=1)
         
     def _start_gradual_stopping(self):
         self._logger.info('in _start_gradual_stopping ')
         self._is_playing = False
-        for (delta_t, speed) in cfg.SPEED_DOWN_RAMPING:
-            self._logger.debug('setting speed = {}'.format(speed))
-            self.update_speed(new_speed=speed)
-            time.sleep(delta_t)
+        self.gradual_speed_change(steps=cfg.SPEED_DOWN_RAMPING)
         self.pause()
         
     def send_serial_data(self, opid):

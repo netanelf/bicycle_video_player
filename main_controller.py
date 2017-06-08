@@ -129,6 +129,7 @@ class SerialReader(thread):
         self.conn_id = conn_id
         self.serial_connection = serial_connection
         self.serial_connection.flush()
+        self._logger.info('initialized SerialReader')
 
     def run(self):
         while 1:
@@ -204,6 +205,25 @@ class VlcPlayer(thread):
         """
         return self.mp.get_time()
 
+    def gradual_speed_change(self, steps):
+        """
+        change the play speed gradually, steps should be in the format:
+        [('dwell time', 'speed'), (0.4[S], 0.9xNormal)]
+
+         ie:
+         SPEED_UP_RAMPING = [
+            (0.5, 0.3),
+            (0.5, 0.7),
+            (0.5, 0.9),
+            ]
+        :param steps:
+        :return:
+        """
+        for (delta_t, speed) in steps:
+            self._logger.debug('setting speed = {}'.format(speed))
+            self.update_speed(new_speed=speed)
+            time.sleep(delta_t)
+
     def has_send(self):
         raise NotImplementedError()
 
@@ -232,7 +252,7 @@ def init_logging(log_name, logger_level):
 
 
 if __name__ =='__main__':
-    init_logging(log_name='main_controller', logger_level=logging.INFO)
+    init_logging(log_name='main_controller', logger_level=logging.DEBUG)
     m = main_controller()
     while m.player.is_alive():
         time.sleep(1)
