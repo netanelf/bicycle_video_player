@@ -1,28 +1,32 @@
+import time
+
 from main_controller import VlcPlayer
+import config
 
 
 class HistoryController(VlcPlayer):
-    CFG = 0 #todo
-    MOVIE = "" #todo
+    MOVIE = "movie.mp4"
 
-    def __init__(self,serial):
-        super(self, self.init())
-        self.thresh = self.CFG
+    def __init__(self):
+        super(HistoryController, self).__init__()
+        self.thresh = config.THRESHOLD
         self.load_movie(self.MOVIE)
+        self.d={}
 
     def run(self):
         while True:
-            pass
-            # use self.speed
+            time.sleep(0.1)
+            toggle = 0
+            for key, value in self.d.iteritems():
+                if value > self.thresh:
+                    toggle = 1
+                    break
+            if toggle == 1 :
+                self.play()
+            else:
+                self.pause()
 
-    def do_kaftor(self,kaftor_number):
-        #TODO
-        pass
 
-    def has_send(self):
-        #TODO
-        pass
 
     def update_encoder(self, player_id, encoder_data):
-        #TODO
-        pass
+        self.d[player_id] = encoder_data*config.CONVERSION_FACTOR
