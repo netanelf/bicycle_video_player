@@ -14,3 +14,33 @@
 4. install pyserial (sudo apt-get install python-serial)
 5. install opencv (sudo apt-get install python-opencv)
 
+
+# exhibits
+## History:
+screen: 1
+bicycle: 3
+arduino_0: 1111
+arduino_1: 1110
+arduino_2: 1101
+
+## City Tour:
+screen: 2
+bicycle: 2
+arduino_0: 1100
+arduino_1: 1011
+arduino_2: 1010
+arduino_3: 1001
+
+## Brakes:
+screen:1
+arduino_0: 1000
+
+## Race:
+screen: 1
+bicycle: 3
+arduino_0: 0111
+arduino_1: 0110
+arduino_2: 0101
+
+
+

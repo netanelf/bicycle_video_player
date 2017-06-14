@@ -22,9 +22,7 @@ class TourController(VlcPlayer):
     def __init__(self, player_number):
         super(TourController, self).__init__(num_of_mps=len(cfg.SCENES))
         self._logger = logging.getLogger(self.__class__.__name__)
-
-        #self._play_lock = threading.RLock()
-        #self._loading_file = False
+        self._loading_file = False
         self._speed = 0
         self._player_number = player_number
 
@@ -32,9 +30,6 @@ class TourController(VlcPlayer):
         self._topography_keys = None
         self._current_topography_index = None
 
-        #for scene_name, scene in cfg.SCENES.items():
-            #self._load_scene(scene_name=cfg.SCENES.keys()[self._scene_index])
-            #self._load_scene(scene_name=scene_name)
         self._load_all_scenes()
         self._active_player_id = 0
         self._set_active_scene(scene_name='default')
@@ -56,44 +51,28 @@ class TourController(VlcPlayer):
             media_id += 1
 
     def _set_active_scene(self, scene_name):
+        self._logger.info('setting active scene to: {}'.format(scene_name))
         self._topography_struct = cfg.SCENES[scene_name]['topography']
         self._topography_keys = self._topography_struct.keys()
         self._current_topography_index = -1
         self._start_paused_movie()
-
-    '''
-    def _load_scene(self, scene_name):
-        self._logger.info('loading scene {}'.format(scene_name))
-        if self._player_number == 0:
-            movie_type = 'front_movie'
-        else:
-            movie_type = 'back_movie'
-
-        self.load_movie(file=cfg.SCENES[scene_name][movie_type])
-
-        self._topography_struct = cfg.SCENES[scene_name]['topography']
-        self._topography_keys = self._topography_struct.keys()
-        self._current_topography_index = -1
-        self._start_paused_movie()
-        self._logger.info('finished loading {}'.format(scene_name))
-    '''
 
     def run(self):
         while self._alive:
-            #if not self._loading_file:
-            if self._speed > cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is False:
-                self._start_gradual_playing()
+            if not self._loading_file:
+                if self._speed > cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is False:
+                    self._start_gradual_playing()
 
-            if self._speed <= cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is True:
-                self._start_gradual_stopping()
+                if self._speed <= cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is True:
+                    self._start_gradual_stopping()
 
-            t = self.get_time()
-            self._logger.debug('time: {}'.format(t))
+                t = self.get_time()
+                self._logger.debug('time: {}'.format(t))
 
-            if self._current_topography_index + 1 < len(self._topography_keys) and self.is_playing(self._active_player_id) is True:
-                if t >= self._topography_keys[self._current_topography_index + 1]:  # we just passed to next topography
-                    self._current_topography_index += 1
-                    self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
+                if self._current_topography_index + 1 < len(self._topography_keys) and self.is_playing(self._active_player_id) is True:
+                    if t >= self._topography_keys[self._current_topography_index + 1]:  # we just passed to next topography
+                        self._current_topography_index += 1
+                        self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
 
             time.sleep(0.05)
 
@@ -141,13 +120,15 @@ class TourController(VlcPlayer):
 
     def do_kaftor(self, kaftor_number):
         self._logger.info('button {} was pushed'.format(kaftor_number))
-        if kaftor_number == 0 and self.is_playing(self._active_player_id) is False:
+        if kaftor_number == 1 and self.is_playing(self._active_player_id) is False:
+            self._loading_file = True
             if self._active_player_id + 1 < len(cfg.SCENES.keys()):
                 self._active_player_id += 1
             else:
                 self._active_player_id = 0
 
             self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
+            self._loading_file = False
 
     def update_encoder(self, player_id, encoder_data):
         self._logger.debug('in update_encoder, player_id= {}, encoder_data= {}'.format(player_id, encoder_data))
