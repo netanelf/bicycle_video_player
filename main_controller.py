@@ -187,34 +187,44 @@ class VlcPlayer(thread):
 
     def __init__(self, num_of_mps=1):
         super(VlcPlayer, self).__init__()
-        self.mp = vlc.MediaPlayer()
-        self.instance = self.mp.get_instance()
+        self.mp = []
+        self.instance = []
+        self._is_playing = []
+        for i in range(num_of_mps):
+            self.mp.append(vlc.MediaPlayer())
+            self.instance.append(self.mp[i].get_instance())
+            self._is_playing.append(False)
         self.data_to_send = Queue.Queue()
-        self._is_playing = False
         self._alive = True
 
     def load_movie(self,file,media_sel=0):
-        self.mp.set_media(self.instance.media_new(os.path.expanduser(file)))
+        self.mp[media_sel].set_media(self.instance[media_sel].media_new(os.path.expanduser(file)))
 
     def play(self,media_sel=0):
-        self.mp.play()
-        self._is_playing = True
+        self.mp[media_sel].play()
+        self._is_playing[media_sel] = True
 
     def pause(self,media_sel=0):
-        self.mp.pause()
-        self._is_playing = False
+        self.mp[media_sel].pause()
+        self._is_playing[media_sel] = False
 
     def update_speed(self,new_speed,media_sel=0):
-        self.mp.set_rate(new_speed)
+        self.mp[media_sel].set_rate(new_speed)
 
-    def get_time(self):
+    def is_playing(self, media_sel=0):
+        return self._is_playing[media_sel]
+
+    def set_fullscreen(self,val=True,media_sel=0):
+        self.mp[media_sel].set_fullscreen(val)
+
+    def get_time(self,media_sel=0):
         """
         get time in movie
         @return: time [mS]
         """
-        return self.mp.get_time()
+        return self.mp[media_sel].get_time()
 
-    def gradual_speed_change(self, steps):
+    def gradual_speed_change(self, steps, media_sel=0):
         """
         change the play speed gradually, steps should be in the format:
         [('dwell time', 'speed'), (0.4[S], 0.9xNormal)]
@@ -230,7 +240,7 @@ class VlcPlayer(thread):
         """
         for (delta_t, speed) in steps:
             self._logger.debug('setting speed = {}'.format(speed))
-            self.update_speed(new_speed=speed)
+            self.update_speed(new_speed=speed,media_sel=media_sel)
             time.sleep(delta_t)
 
     def do_kaftor(self,kaftor_number):
