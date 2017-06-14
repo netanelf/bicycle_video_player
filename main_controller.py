@@ -204,6 +204,10 @@ class VlcPlayer(thread):
         self.mp[media_sel].play()
         self._is_playing[media_sel] = True
 
+    def stop(self, media_sel=0):
+        self.mp[media_sel].stop()
+        self._is_playing[media_sel] = False
+
     def pause(self,media_sel=0):
         self.mp[media_sel].pause()
         self._is_playing[media_sel] = False

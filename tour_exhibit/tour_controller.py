@@ -20,23 +20,48 @@ class TourController(VlcPlayer):
                      }
 
     def __init__(self, player_number):
-        super(TourController, self).__init__()
+        super(TourController, self).__init__(num_of_mps=len(cfg.SCENES))
         self._logger = logging.getLogger(self.__class__.__name__)
 
         #self._play_lock = threading.RLock()
-        self._loading_file = False
+        #self._loading_file = False
         self._speed = 0
         self._player_number = player_number
-        self._scene_index = 0
 
         self._topography_struct = None
         self._topography_keys = None
         self._current_topography_index = None
 
-        self._load_scene(scene_name=cfg.SCENES.keys()[self._scene_index])
-
+        #for scene_name, scene in cfg.SCENES.items():
+            #self._load_scene(scene_name=cfg.SCENES.keys()[self._scene_index])
+            #self._load_scene(scene_name=scene_name)
+        self._load_all_scenes()
+        self._active_player_id = 0
+        self._set_active_scene(scene_name='default')
         self._logger.info('finished initializing TourController')
 
+    def _load_all_scenes(self):
+        self._logger.info('in _load_all_scenes')
+        if self._player_number == 0:
+            movie_type = 'front_movie'
+        else:
+            movie_type = 'back_movie'
+
+        media_id = 0
+        for scene_name, scene in cfg.SCENES.items():
+            file_name = cfg.SCENES[scene_name][movie_type]
+            self._logger.info('loading scene: {}, file: {}, media_id: {}'.format(scene_name, file_name, media_id))
+            self.load_movie(file=file_name, media_sel=media_id)
+            self.set_fullscreen(media_sel=media_id)
+            media_id += 1
+
+    def _set_active_scene(self, scene_name):
+        self._topography_struct = cfg.SCENES[scene_name]['topography']
+        self._topography_keys = self._topography_struct.keys()
+        self._current_topography_index = -1
+        self._start_paused_movie()
+
+    '''
     def _load_scene(self, scene_name):
         self._logger.info('loading scene {}'.format(scene_name))
         if self._player_number == 0:
@@ -51,30 +76,35 @@ class TourController(VlcPlayer):
         self._current_topography_index = -1
         self._start_paused_movie()
         self._logger.info('finished loading {}'.format(scene_name))
+    '''
 
     def run(self):
         while self._alive:
-            if not self._loading_file:
-                if self._speed > cfg.SPEED_THRESHOLD and self._is_playing is False:
-                    self._start_gradual_playing()
+            #if not self._loading_file:
+            if self._speed > cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is False:
+                self._start_gradual_playing()
 
-                if self._speed <= cfg.SPEED_THRESHOLD and self._is_playing is True:
-                    self._start_gradual_stopping()
+            if self._speed <= cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is True:
+                self._start_gradual_stopping()
 
-                t = self.get_time()
-                self._logger.debug('time: {}'.format(t))
+            t = self.get_time()
+            self._logger.debug('time: {}'.format(t))
 
-                if self._current_topography_index + 1 < len(self._topography_keys) and self._is_playing is True:
-                    if t >= self._topography_keys[self._current_topography_index + 1]:  # we just passed to next topography
-                        self._current_topography_index += 1
-                        self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
+            if self._current_topography_index + 1 < len(self._topography_keys) and self.is_playing(self._active_player_id) is True:
+                if t >= self._topography_keys[self._current_topography_index + 1]:  # we just passed to next topography
+                    self._current_topography_index += 1
+                    self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
 
             time.sleep(0.05)
 
     def _start_paused_movie(self):
-        self.play()
-        time.sleep(0.5)
-        self.pause()
+        self.play(self._active_player_id)
+        time.sleep(0.1)
+        self.pause(self._active_player_id)
+
+        for i in range(len(cfg.SCENES)):
+            if i != self._active_player_id:
+                self.stop(media_sel=i)
 
     def _set_topography(self, topography):
         """
@@ -100,26 +130,24 @@ class TourController(VlcPlayer):
 
     def _start_gradual_playing(self):
             self._logger.info('in _start_gradual_playing ')
-            self.play()
-            self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING)
-            self.update_speed(new_speed=1)
+            self.play(media_sel=self._active_player_id)
+            self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING, media_sel=self._active_player_id)
+            self.update_speed(new_speed=1, media_sel=self._active_player_id)
         
     def _start_gradual_stopping(self):
         self._logger.info('in _start_gradual_stopping ')
-        self.gradual_speed_change(steps=cfg.SPEED_DOWN_RAMPING)
-        self.pause()
+        self.gradual_speed_change(steps=cfg.SPEED_DOWN_RAMPING, media_sel=self._active_player_id)
+        self.pause(media_sel=self._active_player_id)
 
     def do_kaftor(self, kaftor_number):
         self._logger.info('button {} was pushed'.format(kaftor_number))
-        if kaftor_number == 0 and self._is_playing is False:
-            self._loading_file = True
-            if self._scene_index + 1 < len(cfg.SCENES.keys()):
-                self._scene_index += 1
+        if kaftor_number == 0 and self.is_playing(self._active_player_id) is False:
+            if self._active_player_id + 1 < len(cfg.SCENES.keys()):
+                self._active_player_id += 1
             else:
-                self._scene_index = 0
+                self._active_player_id = 0
 
-            self._load_scene(scene_name=cfg.SCENES.keys()[self._scene_index])
-            self._loading_file = False
+            self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
 
     def update_encoder(self, player_id, encoder_data):
         self._logger.debug('in update_encoder, player_id= {}, encoder_data= {}'.format(player_id, encoder_data))
@@ -146,7 +174,7 @@ if __name__ == '__main__':
     from logging.handlers import RotatingFileHandler
     import os
     from datetime import datetime
-    init_logging('tour_controller', logging.DEBUG)
+    init_logging('tour_controller', logging.INFO)
     p = TourController(player_number=0)
     p.setDaemon(True)
     p.start()

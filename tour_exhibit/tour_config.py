@@ -19,7 +19,7 @@ ENSURE that the timestamps are in order ie. time_ms3 >= time_ms2 >= time_ms
 """
 SCENES = {
     'default': {
-        'front_movie': r'movie.mp4',
+        'front_movie': r'bikes.mp4',
         'back_movie': r'2.mp4',
         'topography': {0: 1,
                        5000: 2,
@@ -27,7 +27,7 @@ SCENES = {
                        }
     },
     'vienna': {
-        'front_movie': r'2.mp4',
+        'front_movie': r'movie.mp4',
         'back_movie': r'movie.mp4',
         'topography': {0: 1,
                        5000: 2,
