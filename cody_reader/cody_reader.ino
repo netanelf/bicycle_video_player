@@ -1,19 +1,21 @@
 
-#define CODER_0_PIN_0  4
-#define CODER_0_PIN_1  5
+#define CODER_0_PIN_0  2
+#define CODER_0_PIN_1  3
+#define FAN_PIN        4
+#define LOAD_PIN       5
 #define BUTTON_0_PIN   6
 #define BUTTON_1_PIN   7
 #define BUTTON_2_PIN   8
 #define SPARE_PIN_0    9
-#define FAN_PIN        10
-#define LOAD_PIN       11
-#define SPARE_PIN_1    12
-#define JUMPER_PIN_0   14 //DEVICE_ID LSB
-#define JUMPER_PIN_1   15 //...
-#define JUMPER_PIN_2   16 //...
-#define JUMPER_PIN_3   17 //DEVICE ID MSB
-#define SPARE_PIN_2    18
-#define SPARE_PIN_3    19
+#define SPARE_PIN_1    10
+#define SPARE_PIN_2    11
+#define SPARE_PIN_3    12
+#define SPARE_PIN_4    14
+#define SPARE_PIN_5    15
+#define JUMPER_PIN_0   16 //DEVICE_ID LSB
+#define JUMPER_PIN_1   17 //...
+#define JUMPER_PIN_2   18 //...
+#define JUMPER_PIN_3   19 //DEVICE ID MSB
 
 #define ILLEGAL   0
 #define UP        1
@@ -21,7 +23,6 @@
 #define NO_CHANGE 3
 
 #define DESIRED_DIRECTION_0 DOWN
-#define DESIRED_DIRECTION_1 UP
 
 #define STOP  LOW
 #define START HIGH
@@ -32,10 +33,10 @@
 #define BUTTON_2       3
 #define PING           4
 #define IDENTIFICATION 5
-#define BUTTON_OP      6 //TODO: reconsider?
+#define BUTTON_OP      6 
 
 int DEVICE_ID; //this is a "semi-define" variable, set once in the setup phase
-int DEVICE_ID_MAP[16] = {10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 21}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
+int DEVICE_ID_MAP[16] = {10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43}; //"tens" digit = which exhibit, "ones" digit = which arduino inside the exhibit. currently mapping is arbitrary. need to revise.
 
 int poll_result_button_0 = 0x2;
 int poll_result_button_1 = 0x2;
