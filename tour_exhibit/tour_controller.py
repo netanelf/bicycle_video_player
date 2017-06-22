@@ -1,6 +1,7 @@
 import logging
 from bisect import bisect_left
 import threading
+import time
 
 # this is just for debug running through the __main__ function
 try:
@@ -29,6 +30,7 @@ class TourController(VlcPlayer):
         self._topography_struct = None
         self._topography_keys = None
         self._current_topography_index = None
+        self._last_movie_change_time = time.time() - 5
 
         self._load_all_scenes()
         self._active_player_id = 0
@@ -120,7 +122,7 @@ class TourController(VlcPlayer):
 
     def do_kaftor(self, kaftor_number):
         self._logger.info('button {} was pushed'.format(kaftor_number))
-        if kaftor_number == 1 and self.is_playing(self._active_player_id) is False:
+        if (kaftor_number == 1) and (self.is_playing(self._active_player_id) is False) and (time.time() - self._last_movie_change_time > cfg.DEBOUNCING_TIME):
             self._loading_file = True
             if self._active_player_id + 1 < len(cfg.SCENES.keys()):
                 self._active_player_id += 1
@@ -128,6 +130,7 @@ class TourController(VlcPlayer):
                 self._active_player_id = 0
 
             self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
+            self._last_movie_change_time = time.time()
             self._loading_file = False
 
     def update_encoder(self, player_id, encoder_data):

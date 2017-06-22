@@ -19,7 +19,7 @@ ENSURE that the timestamps are in order ie. time_ms3 >= time_ms2 >= time_ms
 """
 SCENES = {
     'default': {
-        'front_movie': r'tour_exhibit\bikes.mp4',
+        'front_movie': r'tour_exhibit/Ottawa_bicycle_daytime.MP4',
         'back_movie': r'2.mp4',
         'topography': {0: 1,
                        5000: 2,
@@ -27,7 +27,7 @@ SCENES = {
                        }
     },
     'vienna': {
-        'front_movie': r'tour_exhibit\movie.mp4',
+        'front_movie': r'tour_exhibit/Ottawa_night_time_1.MP4',
         'back_movie': r'movie.mp4',
         'topography': {0: 1,
                        5000: 2,
@@ -42,6 +42,8 @@ ENCODER_TO_SPEED_CONVERSION = 10
 
 # if speed is greater than SPEED_THRESHOLD, movie will be played
 SPEED_THRESHOLD = 10
+
+DEBOUNCING_TIME = 0.5  #[S]
 
 # [('dwell time', 'speed'), (0.4[S], 0.9xNormal)]
 SPEED_UP_RAMPING = [
