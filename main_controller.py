@@ -141,7 +141,7 @@ class SerialReader(thread):
                 self.player.update_encoder(self.conn_id, encoder_delta)
 
             if opid == self.BUTTON:
-                self.player.do_kaftor(data)
+                self.player.do_kaftor(int(''.join(data)))
     
     def read_serial_data(self, serial_conn):
         reading = True
