@@ -13,6 +13,7 @@
 3. install numpy (sudo apt-get install python-numpy)
 4. install pyserial (sudo apt-get install python-serial)
 5. install opencv (sudo apt-get install python-opencv)
+6. add user permissions to dialout group: 'sudo usermod -a -G dialout <username>' and then logout and login
 
 
 # exhibits
