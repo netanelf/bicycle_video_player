@@ -228,6 +228,9 @@ class VlcPlayer(thread):
         """
         return self.mp[media_sel].get_time()
 
+    def set_position(self, position, media_sel=0):
+        self.mp[media_sel].set_position(position)
+
     def gradual_speed_change(self, steps, media_sel=0):
         """
         change the play speed gradually, steps should be in the format:
