@@ -45,6 +45,8 @@ SPEED_THRESHOLD = 10
 
 DEBOUNCING_TIME = 0.5  #[S]
 
+TIME_FOR_RETURN_TO_DEFAULT_SCENE = 30  # [S]
+
 # [('dwell time', 'speed'), (0.4[S], 0.9xNormal)]
 SPEED_UP_RAMPING = [
     (0.5, 0.3),
