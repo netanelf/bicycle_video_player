@@ -12,3 +12,5 @@ BICYCLE_ICON_HORIZONTAL_OFFSET = -140    # offset of bicycle icon from bar end
 
 # Power Bar
 POWER_BAR_LOCATION = ((650, 100), (650, 1100))
+
+SPEED_FACTOR = [3, 3, 3]

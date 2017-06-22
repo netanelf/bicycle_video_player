@@ -3,6 +3,7 @@ import threading
 import logging
 from bicycle_race_viewer import BicycleRaceViewer
 import serial
+import bicycle_race_config as cfg
 
 
 class RaceController(threading.Thread):
@@ -29,7 +30,7 @@ class RaceController(threading.Thread):
             time.sleep(1)
 
     def update_encoder(self, player_id, encoder_delta):
-        new_velocity = encoder_delta / 100  # TODO: this should come from configuration file
+        new_velocity = encoder_delta / cfg.SPEED_FACTOR[player_id]  # TODO: this should come from configuration file
         self.update_speed(player_id, new_velocity)
     
     def update_speed(self, player_id, speed):

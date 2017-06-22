@@ -178,10 +178,12 @@ class SerialWriter(thread):
     def run(self):
         while True:
             time.sleep(1)
-            d = self.player.data_to_send.get()
-            self._logger.debug('got data to send: {}'.format(d))
-            self.serial.write(d + '\n')
-
+            try:
+                d = self.player.data_to_send.get()
+                self._logger.debug('got data to send: {}'.format(d))
+                self.serial.write(d + '\n')
+            except AttributeError:
+                pass
 
 class VlcPlayer(thread):
 
