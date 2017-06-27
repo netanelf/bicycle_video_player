@@ -11,8 +11,9 @@ class BrakeController(VlcPlayer):
         self._encoder_data = 0
         self._prev_video_speed = 0
         self._cur_movie = 0
-        self.load_movie(cfg.MOVIE1,0)
-        self.set_fullscreen(0)
+        self.load_movie(cfg.MOVIE1)
+        self.set_fullscreen()
+        self.vlm_set_loop(self.mp[0],True)
 
     def run(self):
         threshold_passed = False
@@ -29,6 +30,11 @@ class BrakeController(VlcPlayer):
             if not threshold_passed:
                 if self.is_playing(self._cur_movie):
                     self.pause(self._cur_movie)
+            if self.get_state() is self.State.Ended:
+                self.set_position(0)
+                if not self.is_playing(self._cur_movie):
+                    self.play(self._cur_movie)
+
             threshold_passed = False
             time.sleep(0.05)
 
