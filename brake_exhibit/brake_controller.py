@@ -3,6 +3,8 @@ from json import encoder
 from main_controller import VlcPlayer
 import time
 import brake_config as cfg
+import generated_vlc as vlc
+
 
 class BrakeController(VlcPlayer):
 
@@ -13,7 +15,6 @@ class BrakeController(VlcPlayer):
         self._cur_movie = 0
         self.load_movie(cfg.MOVIE1)
         self.set_fullscreen()
-        self.vlm_set_loop(self.mp[0],True)
 
     def run(self):
         threshold_passed = False
@@ -30,10 +31,11 @@ class BrakeController(VlcPlayer):
             if not threshold_passed:
                 if self.is_playing(self._cur_movie):
                     self.pause(self._cur_movie)
-            if self.get_state() is self.State.Ended:
-                self.set_position(0)
-                if not self.is_playing(self._cur_movie):
-                    self.play(self._cur_movie)
+
+            #this is a workaround to restart the video when it finishes
+            if self.mp[self._cur_movie].get_state() == vlc.State.Ended:
+                self.load_movie(cfg.MOVIE1)
+                self.play()
 
             threshold_passed = False
             time.sleep(0.05)
@@ -59,20 +61,16 @@ class Try(VlcPlayer):
         self.pause(old_movie)
         self.play(new_movie)
         self._cur_movie = new_movie
-
+"""
 if __name__ =='__main__':
-    b = Try()
-    b.set_fullscreen(media_sel=0)
-    b.set_fullscreen(media_sel=1)
-    not_switched = True
-    b.play(b._cur_movie)
-    while (not_switched):
-        time.sleep(0.05)
-        if b.get_time(b._cur_movie) > 18000:
-            print "switching movie"
-            b.switch_movie(0,1)
-            not_switched = False
-    time.sleep(20)
+    b = BrakeController()
+    b.start()
+    countr = 10
+    while (True):
+        time.sleep(1)
+        countr = countr -1
+        b.update_encoder(0,countr)
+        if countr == 5:
+            countr = 10
 
-    """
 
