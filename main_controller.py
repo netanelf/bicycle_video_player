@@ -220,6 +220,11 @@ class VlcPlayer(thread):
     def is_playing(self, media_sel=0):
         return self._is_playing[media_sel]
 
+    def restart_ended_video(self,file,media_sel=0):
+        if self.mp[media_sel].get_state() == vlc.State.Ended:
+            self.load_movie(file,media_sel)
+            self.play(media_sel)
+
     def set_fullscreen(self,val=True,media_sel=0):
         self.mp[media_sel].set_fullscreen(val)
 

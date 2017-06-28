@@ -33,9 +33,7 @@ class BrakeController(VlcPlayer):
                     self.pause(self._cur_movie)
 
             #this is a workaround to restart the video when it finishes
-            if self.mp[self._cur_movie].get_state() == vlc.State.Ended:
-                self.load_movie(cfg.MOVIE1)
-                self.play()
+            self.restart_ended_video(cfg.MOVIE1,0)
 
             threshold_passed = False
             time.sleep(0.05)
