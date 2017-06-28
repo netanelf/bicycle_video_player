@@ -8,4 +8,4 @@ VID_SPEED = {"SPEED_TH_1": 0.5,
              "SPEED_TH_3": 1.5,
              "SPEED_TH_4": 2.0}
 
-MOVIE1 = r"brakes_movie/123.avi"
+MOVIE1 = r"brake_exhibit/123.avi"

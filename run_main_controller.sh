@@ -1,5 +1,5 @@
 #!/bin/bash
-gsettings set org.gnome.desktop.screensaver idle-activation-enabled false
-gsettings set org.gnome.settings-daemon.plugins.power active false
+
+nohup /home/mada/bicycle_video_player/achbar.sh &
 cd /home/mada/bicycle_video_player
-python main_controller.py 
+python ./main_controller.py
