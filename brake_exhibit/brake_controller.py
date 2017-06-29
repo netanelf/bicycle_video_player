@@ -1,19 +1,19 @@
-from json import encoder
-
 from main_controller import VlcPlayer
-import time
-import brake_config as cfg
 import generated_vlc as vlc
+import brake_config as cfg
+from json import encoder
+import time
+import os
 
 
 class BrakeController(VlcPlayer):
-
     def __init__(self):
         super(BrakeController, self).__init__(num_of_mps=1)
         self._encoder_data = 0
         self._prev_video_speed = 0
         self._cur_movie = 0
-        self.load_movie(cfg.MOVIE1)
+        self.movie_path = os.path.join(os.path.basename(os.path.dirname(os.path.realpath(__file__))),cfg.MOVIE_FILENAME)
+        self.load_movie(self.movie_path)
         self.set_fullscreen()
 
     def run(self):
@@ -32,8 +32,8 @@ class BrakeController(VlcPlayer):
                 if self.is_playing(self._cur_movie):
                     self.pause(self._cur_movie)
 
-            #this is a workaround to restart the video when it finishes
-            self.restart_ended_video(cfg.MOVIE1,0)
+            # this is a workaround to restart the video when it finishes
+            self.restart_ended_video(self.movie_path, 0)
 
             threshold_passed = False
             time.sleep(0.05)
@@ -60,15 +60,13 @@ class Try(VlcPlayer):
         self.play(new_movie)
         self._cur_movie = new_movie
 """
-if __name__ =='__main__':
+if __name__ == '__main__':
     b = BrakeController()
     b.start()
     countr = 10
-    while (True):
+    while True:
         time.sleep(1)
-        countr = countr -1
-        b.update_encoder(0,countr)
+        countr = countr - 1
+        b.update_encoder(0, countr)
         if countr == 5:
             countr = 10
-
-

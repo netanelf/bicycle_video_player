@@ -1,7 +1,8 @@
-import logging
 from bisect import bisect_left
 import threading
+import logging
 import time
+import os
 
 # this is just for debug running through the __main__ function
 try:
@@ -18,7 +19,7 @@ class TourController(VlcPlayer):
     topographies = {'DOWN_HILL': 0,
                     'UP_HILL': 1,
                     'MISHOR': 2
-                     }
+                    }
 
     def __init__(self, player_number):
         super(TourController, self).__init__(num_of_mps=len(cfg.SCENES))
@@ -48,8 +49,9 @@ class TourController(VlcPlayer):
         media_id = 0
         for scene_name, scene in cfg.SCENES.items():
             file_name = cfg.SCENES[scene_name][movie_type]
+            file_path = os.path.join(os.path.basename(os.path.dirname(os.path.realpath(__file__))), file_name)
             self._logger.info('loading scene: {}, file: {}, media_id: {}'.format(scene_name, file_name, media_id))
-            self.load_movie(file=file_name, media_sel=media_id)
+            self.load_movie(file=file_path, media_sel=media_id)
             self.set_fullscreen(media_sel=media_id)
             media_id += 1
 
@@ -72,7 +74,7 @@ class TourController(VlcPlayer):
                 if self.is_playing(self._active_player_id) is False and time.time() - self._movie_stopped_time > cfg.TIME_FOR_RETURN_TO_DEFAULT_SCENE and (self._active_player_id != 0 or self.get_time() > 100):
                     self._logger.debug('bicicle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
                     
-                    if (self._active_player_id == 0):
+                    if self._active_player_id == 0:
                         self.set_position(0)
                     else:
 		        self._active_player_id = 0
@@ -80,7 +82,6 @@ class TourController(VlcPlayer):
                         self._last_movie_change_time = time.time()
                         self._movie_stopped_time = time.time()
                     self._logger.debug('returning to main loop')
-                    
 
                 t = self.get_time()
                 self._logger.debug('time: {}'.format(t))
@@ -94,12 +95,12 @@ class TourController(VlcPlayer):
 
     def _start_paused_movie(self):
         self.play(self._active_player_id)
-        time.sleep(0.1)
+        time.sleep(1)
         self.pause(self._active_player_id)
 
         for i in range(len(cfg.SCENES)):
             if i != self._active_player_id:
-            	self.stop(media_sel=i)
+                self.stop(media_sel=i)
 
     def _set_topography(self, topography):
         """
@@ -156,9 +157,9 @@ class TourController(VlcPlayer):
 def init_logging(log_name, logger_level):
     logger = logging.getLogger()
     s_handler = logging.StreamHandler()
-    f_handler = RotatingFileHandler(filename=os.path.join('..', 'logs', '{}_{}.log'
-                                            .format(log_name, datetime.now()
-                                                    .strftime('%d-%m-%y_%H-%M-%S'))),
+    f_handler = RotatingFileHandler(filename=os.path.join('..', 'logs', '{}_{}.log'.format(
+        log_name,
+        datetime.now().strftime('%d-%m-%y_%H-%M-%S'))),
                                     maxBytes=10E6,
                                     backupCount=500)
 
@@ -171,7 +172,6 @@ def init_logging(log_name, logger_level):
     
 if __name__ == '__main__':
     from logging.handlers import RotatingFileHandler
-    import os
     from datetime import datetime
     init_logging('tour_controller', logging.INFO)
     p = TourController(player_number=0)

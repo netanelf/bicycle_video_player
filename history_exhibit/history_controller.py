@@ -1,24 +1,24 @@
-import time
-
-import logging
-
 from main_controller import VlcPlayer
-import config
+import logging
+import config as cfg
+import time
+import os
 
 
 class HistoryController(VlcPlayer):
-
-    MOVIE = "movie.mp4"
-
     def __init__(self):
         super(HistoryController, self).__init__()
-        self.thresh = config.THRESHOLD
-        self.load_movie(self.MOVIE)
-        self.speeds={}
+        self.thresh = cfg.THRESHOLD
+        movie_path = os.path.join(os.path.basename(os.path.dirname(os.path.realpath(__file__))), cfg.MOVIE_FILENAME)
+        self.load_movie(movie_path)
+        self.speeds = {}
         self._logger = logging.getLogger(self.__class__.__name__)
-
+        self.set_fullscreen()
 
     def run(self):
+        self.play()
+        time.sleep(0.1)
+        self.pause()
         while True:
             time.sleep(0.1)
             toggle = False
@@ -26,13 +26,13 @@ class HistoryController(VlcPlayer):
                 if value > self.thresh:
                     toggle = True
                     break
-            if toggle and not self._is_playing:
+            if toggle and not self.is_playing():
                 self.play()
                 self._logger.debug('im toggling on!')
-            elif not toggle and self._is_playing:
+            elif not toggle and self.is_playing():
                 self._logger.debug('im toggling off!')
                 self.pause()
 
     def update_encoder(self, player_id, encoder_data):
-        self._logger.debug('player id {}'.format(player_id))
-        self.speeds[player_id] = encoder_data * config.CONVERSION_FACTOR[player_id]
+        self._logger.debug('player id: {} data: {}'.format(player_id, encoder_data))
+        self.speeds[player_id] = encoder_data * cfg.CONVERSION_FACTOR[player_id]

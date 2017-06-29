@@ -1,19 +1,20 @@
-import glob
-import logging
-import os
-import serial
-import sys
-import time
-from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from threading import Thread as thread
-import Queue
+from datetime import datetime
 import generated_vlc as vlc
-#from history_exhibit.history_controller import HistoryController
+import logging
+import serial
+import Queue
+import glob
+import time
+import sys
+import os
+
+# Change working directory relative to scripts's path
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 class main_controller():
-
     PING = "P\n"
     WHO_IS_COMMAND = "who_is\n"
     IDENTIFICATION_OP_ID = '5'
@@ -162,12 +163,10 @@ class SerialReader(thread):
         op_id = int(raw_data[0])
         data = raw_data[1:]
         self._logger.debug('op_id: {}, data: {}'.format(op_id, data))
-
-        return (op_id, data)
+        return op_id, data
 
 
 class SerialWriter(thread):
-
     def __init__(self, player, id, serial):
         super(SerialWriter, self).__init__()
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -185,8 +184,8 @@ class SerialWriter(thread):
             except AttributeError:
                 pass
 
-class VlcPlayer(thread):
 
+class VlcPlayer(thread):
     def __init__(self, num_of_mps=1):
         super(VlcPlayer, self).__init__()
         self.mp = []
@@ -272,7 +271,6 @@ def init_logging(log_name, logger_level):
                                                     .strftime('%d-%m-%y_%H-%M-%S'))),
                                     maxBytes=10E6,
                                     backupCount=500)
-
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     s_handler.setFormatter(formatter)
     f_handler.setFormatter(formatter)
@@ -281,7 +279,7 @@ def init_logging(log_name, logger_level):
     logger.setLevel(logger_level)
 
 
-if __name__ =='__main__':
+if __name__ == '__main__':
     init_logging(log_name='main_controller', logger_level=logging.DEBUG)
     m = main_controller()
     while m.player.is_alive():

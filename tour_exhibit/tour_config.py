@@ -19,16 +19,16 @@ ENSURE that the timestamps are in order ie. time_ms3 >= time_ms2 >= time_ms
 """
 SCENES = {
     'default': {
-        'front_movie': r'tour_exhibit/Ottawa_bicycle_daytime.MP4',
-        'back_movie': r'tour_exhibit/Ottawa_bicycle_daytime.MP4',
+        'front_movie': 'Ottawa_bicycle_daytime.MP4',
+        'back_movie': 'Ottawa_bicycle_daytime.MP4',
         'topography': {0: 1,
                        5000: 2,
                        12000: 0
                        }
     },
     'vienna': {
-        'front_movie': r'tour_exhibit/Ottawa_night_time_1.MP4',
-        'back_movie': r'tour_exhibit/Ottawa_night_time_1.MP4',
+        'front_movie': 'Ottawa_night_time_1.MP4',
+        'back_movie': 'Ottawa_night_time_1.MP4',
         'topography': {0: 1,
                        5000: 2,
                        12000: 0
