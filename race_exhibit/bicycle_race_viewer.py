@@ -26,26 +26,8 @@ def timing_decorator(func):
 
 class BicycleRaceViewer(threading.Thread):
 
-    SPEED_STATE_THRESHOLDS = range(0, 80, 3)  # speed threshold for power bars
-    POWER_DIGITS_SCALING = 1
-
-    POWER_BAR_DIGIT_OFFSET = [300, 300]
-    SPEED_POWER_CONVERSION_FACTOR = 2  # power = speed * factor
-
-    RECORD_DIGIT_LOCATION = [237,240]
-
-
-    VELOCITY_DIGITS_SCALING = 1
-
-    VELOCITY_BAR_SPEED_OFFSET = [60, 60]
-    PLAYER_1 = 0
-    PLAYER_2 = 1
-    PLAYER_1_COLOR = 'green'
-    PLAYER_2_COLOR = 'yellow'
-    DAILY_RECORD_COLOR = 'white'
-
     @timing_decorator
-    def __init__(self):
+    def __init__(self, dir_name):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info('initializing {}'.format(self.__class__.__name__))
         super(BicycleRaceViewer, self).__init__()
@@ -62,7 +44,7 @@ class BicycleRaceViewer(threading.Thread):
 
         # hold all images (icons, background etc.)
         self._images_structures = {}
-        self._read_all_images(cfg.GRAPHICS_DICTIONARY)
+        self._read_all_images(dir_name)
         self._create_on_the_fly_images()  # create structures for graphics with no image (like velocity bar)
         self._parse_combined_digits('digits-green')
         self._parse_combined_digits('digits-yellow')
@@ -132,7 +114,7 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_bars[1] = v_bar2
 
     @timing_decorator
-    def _check_record(self,player_speed):
+    def _check_record(self, player_speed):
         current_date = strftime("%Y-%m-%d", gmtime())
         if self._record_date != current_date:
             self._daily_record = 0
@@ -143,17 +125,17 @@ class BicycleRaceViewer(threading.Thread):
             self._logger.info("Record broke {}".format(player_speed))
 
     @timing_decorator
-    def _parse_combined_digits(self,filename):
+    def _parse_combined_digits(self, filename):
         self._logger.info('in _parse_combined_digits')
         combined_struct = self._images_structures['combined_digits/{}'.format(filename)]
         x_len, y_len, z_len = combined_struct.shape
         self._logger.debug('combined digits graphics length: {}'.format(y_len))
 
-        y_seperator_pixel = [0, 40, 65, 107, 147, 193, 231, 271, 310, 352, 390]
+        y_separator_pixel = [0, 40, 65, 107, 147, 193, 231, 271, 310, 352, 390]
 
-        for i in range(len(y_seperator_pixel) - 1):
+        for i in range(len(y_separator_pixel) - 1):
             digit_name = '{}/{}'.format(filename,i)
-            self._images_structures[digit_name] = combined_struct[:, y_seperator_pixel[i]: y_seperator_pixel[i + 1], :]
+            self._images_structures[digit_name] = combined_struct[:, y_separator_pixel[i]: y_separator_pixel[i + 1], :]
             self._logger.info('added number in struct: {}'.format(digit_name))
 
     @timing_decorator
@@ -227,10 +209,10 @@ class BicycleRaceViewer(threading.Thread):
     @timing_decorator
     def _change_power_state(self, speed, player):
         self._logger.debug('in _change_power_state, speed: {}, player: {}'.format(speed, player))
-        for index, speed_threshold in enumerate(reversed(self.SPEED_STATE_THRESHOLDS)):
+        for index, speed_threshold in enumerate(reversed(cfg.SPEED_STATE_THRESHOLDS)):
             if speed >= speed_threshold:
                 color = 'Green' if player == 0 else 'Yellow'  # TODO: change to yello when we have more graphics
-                image_name = 'states/Watt_{0}-{1:02d}'.format(color, len(self.SPEED_STATE_THRESHOLDS) - index)
+                image_name = 'states/Watt_{0}-{1:02d}'.format(color, len(cfg.SPEED_STATE_THRESHOLDS) - index)
                 self._logger.debug('returned power bar image: {}'.format(image_name))
                 return np.copy(self._images_structures[image_name])
 
@@ -247,18 +229,17 @@ class BicycleRaceViewer(threading.Thread):
                                                   location=tuple(cfg.POWER_BAR_LOCATION[index]))
 
             # for now, no numbers on power bar
-            #digits_location = map(sum, zip(cfg.POWER_BAR_LOCATION[index], self.POWER_BAR_DIGIT_OFFSET))
-            #self._update_number_to_screen(self._velocity[index]*self.SPEED_POWER_CONVERSION_FACTOR, digits_location,self.POWER_DIGITS_SCALING)
+            #digits_location = map(sum, zip(cfg.POWER_BAR_LOCATION[index], cfg.POWER_BAR_DIGIT_OFFSET))
+            #self._update_number_to_screen(self._velocity[index]*cfg.SPEED_POWER_CONVERSION_FACTOR, digits_location,cfg.POWER_DIGITS_SCALING)
 
     @timing_decorator
     def _update_speed_placements(self):
         self._logger.debug('in _update_speed_placements')
         for index in range(len(self._velocity)):
             bar_progress_offset = [0, self._map_velocity_to_bar_location(velocity=self._velocity[index])]
-            #coordinates = map(sum, zip(cfg.VELOCITY_BAR_LOCATION[index], bar_progress_offset, self.VELOCITY_BAR_SPEED_OFFSET))
-            coordinates = map(sum, zip((cfg.VELOCITY_BAR_LOCATION[index][0], 0), bar_progress_offset, self.VELOCITY_BAR_SPEED_OFFSET))
-            color = self.PLAYER_1_COLOR if index == self.PLAYER_1 else self.PLAYER_2_COLOR
-            self._update_number_to_screen(self._velocity[index], coordinates, self.VELOCITY_DIGITS_SCALING, color)
+            coordinates = map(sum, zip((cfg.VELOCITY_BAR_LOCATION[index][0], 0), bar_progress_offset, cfg.VELOCITY_BAR_SPEED_OFFSET))
+            color = cfg.PLAYER_1_COLOR if index == cfg.PLAYER_1 else cfg.PLAYER_2_COLOR
+            self._update_number_to_screen(self._velocity[index], coordinates, cfg.VELOCITY_DIGITS_SCALING, color)
 
     @timing_decorator
     def _update_number_to_screen(self, value, coordinates, scaling, color):
@@ -333,7 +314,7 @@ class BicycleRaceViewer(threading.Thread):
     @timing_decorator
     def _update_velocity_bar(self):
         # update records
-        self._update_number_to_screen(value=self._daily_record, coordinates=self.RECORD_DIGIT_LOCATION, color=self.DAILY_RECORD_COLOR, scaling=0.5)
+        self._update_number_to_screen(value=self._daily_record, coordinates=cfg.RECORD_DIGIT_LOCATION, color=cfg.DAILY_RECORD_COLOR, scaling=0.5)
         # bar width + gradient
         self._update_velocity_bar_width()
         # bicycle logo placement
@@ -466,21 +447,21 @@ if __name__ == '__main__':
     t0 = time.clock()
     b.start()
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=1)
+    b._update_velocity(player=cfg.PLAYER_1, new_velocity=1)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=30)
+    b._update_velocity(player=cfg.PLAYER_1, new_velocity=30)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=1)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=1)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=30)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=30)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=1)
+    b._update_velocity(player=cfg.PLAYER_1, new_velocity=1)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=1)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=1)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_2, new_velocity=30)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=30)
     sleep(2)
-    b._update_velocity(player=BicycleRaceViewer.PLAYER_1, new_velocity=30)
+    b._update_velocity(player=cfg.PLAYER_1, new_velocity=30)
     sleep(2)
     b.stop_viewer()
     sleep(1)

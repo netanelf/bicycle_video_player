@@ -11,10 +11,10 @@ class RaceController(threading.Thread):
     # PORT = '/dev/ttyUSB0' #'COM40'
     # BAUDRATE = 9600
 
-    def __init__(self):
+    def __init__(self, dir_name=cfg.GRAPHICS_DICTIONARY):
         self._logger = logging.getLogger(self.__class__.__name__)
         super(RaceController, self).__init__()
-        self._viewer = BicycleRaceViewer()
+        self._viewer = BicycleRaceViewer(dir_name)
         self._viewer.setDaemon(True)
         self._viewer.start()
 
@@ -41,9 +41,9 @@ class RaceController(threading.Thread):
 
 if __name__ == '__main__':
     from bicycle_player import init_logging
-    init_logging(logger_name='BicycleRaceController', logger_level=logging.INFO)
+    # init_logging(logger_name='BicycleRaceController', logger_level=logging.INFO)
 
-    controller = RaceController()
+    controller = RaceController("bicycle_race_sample_pics")
     controller.setDaemon(True)
     controller.start()
 

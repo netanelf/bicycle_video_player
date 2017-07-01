@@ -11,6 +11,23 @@ BICYCLE_ICON_HORIZONTAL_OFFSET = -140    # offset of bicycle icon from bar end
 
 
 # Power Bar
-POWER_BAR_LOCATION = ((650, 100), (650, 1100))
+POWER_BAR_LOCATION = ((650, 100), (650, 800))
 
-SPEED_FACTOR = [3, 3, 3]
+SPEED_FACTOR = [6, 6, 3]
+
+SPEED_STATE_THRESHOLDS = range(0, 80, 3)  # speed threshold for power bars
+
+# Currently not used (digits in power bar)
+POWER_DIGITS_SCALING = 1
+POWER_BAR_DIGIT_OFFSET = [300, 300]
+SPEED_POWER_CONVERSION_FACTOR = 2  # power = speed * factor
+
+VELOCITY_DIGITS_SCALING = 1
+VELOCITY_BAR_SPEED_OFFSET = [60, 60]
+PLAYER_1 = 0
+PLAYER_2 = 1
+PLAYER_1_COLOR = 'green'
+PLAYER_2_COLOR = 'yellow'
+
+DAILY_RECORD_COLOR = 'white'
+RECORD_DIGIT_LOCATION = [240, 213]
