@@ -1,7 +1,4 @@
-from bisect import bisect_left
-import threading
 import logging
-import time
 import os
 
 # this is just for debug running through the __main__ function
@@ -16,6 +13,7 @@ import time
 
 
 class TourController(VlcPlayer):
+
     topographies = {'DOWN_HILL': 0,
                     'UP_HILL': 1,
                     'MISHOR': 2
@@ -77,7 +75,7 @@ class TourController(VlcPlayer):
                     if self._active_player_id == 0:
                         self.set_position(0)
                     else:
-		        self._active_player_id = 0
+                        self._active_player_id = 0
                         self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
                         self._last_movie_change_time = time.time()
                         self._movie_stopped_time = time.time()
@@ -173,7 +171,7 @@ def init_logging(log_name, logger_level):
 if __name__ == '__main__':
     from logging.handlers import RotatingFileHandler
     from datetime import datetime
-    init_logging('tour_controller', logging.INFO)
+    # init_logging('tour_controller', logging.INFO)
     p = TourController(player_number=0)
     p.setDaemon(True)
     p.start()
