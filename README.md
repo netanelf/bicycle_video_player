@@ -60,7 +60,7 @@ arduino_0: 0111
 
 arduino_1: 0110
 
-arduino_2: 0101
+arduino_2: 0101 # manual
 
 
 
