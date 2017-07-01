@@ -19,7 +19,7 @@ class HistoryController(VlcPlayer):
 
     def run(self):
         self.play()
-        time.sleep(0.1)
+        time.sleep(1)
         self.pause()
         while True:
             time.sleep(0.1)
