@@ -31,6 +31,7 @@ class TourController(VlcPlayer):
         self._current_topography_index = None
         self._last_movie_change_time = time.time() - 5
         self._movie_stopped_time = time.time()
+        self._played_since_movie_reset = False
 
         self._load_all_scenes()
         self._active_player_id = 0
@@ -73,7 +74,12 @@ class TourController(VlcPlayer):
                     self._logger.debug('bicicle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
                     
                     if self._active_player_id == 0:
+                        self._played_since_movie_reset = False
                         self.set_position(0)
+                        self.play(self._active_player_id)
+                        time.sleep(5)
+                        self.pause(self._active_player_id)
+
                     else:
                         self._active_player_id = 0
                         self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
@@ -124,6 +130,7 @@ class TourController(VlcPlayer):
 
     def _start_gradual_playing(self):
             self._logger.info('in _start_gradual_playing ')
+            self._played_since_movie_reset = True
             self.play(media_sel=self._active_player_id)
             self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING, media_sel=self._active_player_id)
             self.update_speed(new_speed=1, media_sel=self._active_player_id)
@@ -136,7 +143,7 @@ class TourController(VlcPlayer):
 
     def do_kaftor(self, kaftor_number):
         self._logger.info('button {} was pushed'.format(kaftor_number))
-        if (kaftor_number == 1) and (self.is_playing(self._active_player_id) is False) and (time.time() - self._last_movie_change_time > cfg.DEBOUNCING_TIME):
+        if (kaftor_number == 1) and (self.is_playing(self._active_player_id) is False) and (time.time() - self._last_movie_change_time > cfg.DEBOUNCING_TIME) and self._played_since_movie_reset:
             self._loading_file = True
             if self._active_player_id + 1 < len(cfg.SCENES.keys()):
                 self._active_player_id += 1
