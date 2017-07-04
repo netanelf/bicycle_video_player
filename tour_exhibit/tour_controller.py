@@ -153,6 +153,7 @@ class TourController(VlcPlayer):
             self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
             self._last_movie_change_time = time.time()
             self._loading_file = False
+            self._played_since_movie_reset = True
 
     def update_encoder(self, player_id, encoder_data):
         self._logger.debug('in update_encoder, player_id= {}, encoder_data= {}'.format(player_id, encoder_data))
