@@ -70,7 +70,7 @@ class TourController(VlcPlayer):
                 if self._speed <= cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is True:
                     self._start_gradual_stopping()
                 
-                if self.is_playing(self._active_player_id) is False and time.time() - self._movie_stopped_time > cfg.TIME_FOR_RETURN_TO_DEFAULT_SCENE and (self._active_player_id != 0 or self.get_time() > 100):
+                if self.is_playing(self._active_player_id) is False and time.time() - self._movie_stopped_time > cfg.TIME_FOR_RETURN_TO_DEFAULT_SCENE and (self._active_player_id != 0 or self.get_time() > 100) and self._played_since_movie_reset:
                     self._logger.debug('bicicle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
                     
                     if self._active_player_id == 0:
@@ -143,7 +143,7 @@ class TourController(VlcPlayer):
 
     def do_kaftor(self, kaftor_number):
         self._logger.info('button {} was pushed'.format(kaftor_number))
-        if (kaftor_number == 1) and (self.is_playing(self._active_player_id) is False) and (time.time() - self._last_movie_change_time > cfg.DEBOUNCING_TIME) and self._played_since_movie_reset:
+        if (kaftor_number == 1) and (self.is_playing(self._active_player_id) is False) and (time.time() - self._last_movie_change_time > cfg.DEBOUNCING_TIME):
             self._loading_file = True
             if self._active_player_id + 1 < len(cfg.SCENES.keys()):
                 self._active_player_id += 1
