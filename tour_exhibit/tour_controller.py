@@ -74,17 +74,18 @@ class TourController(VlcPlayer):
                     self._logger.debug('bicicle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
                     
                     if self._active_player_id == 0:
-                        self._played_since_movie_reset = False
                         self.set_position(0)
-                        self.play(self._active_player_id)
-                        time.sleep(5)
-                        self.pause(self._active_player_id)
 
                     else:
                         self._active_player_id = 0
                         self._set_active_scene(scene_name=cfg.SCENES.keys()[self._active_player_id])
                         self._last_movie_change_time = time.time()
                         self._movie_stopped_time = time.time()
+                        
+                    self._played_since_movie_reset = False
+                    self.play(self._active_player_id)
+                    time.sleep(5)
+                    self.pause(self._active_player_id)
                     self._logger.debug('returning to main loop')
 
                 t = self.get_time()
