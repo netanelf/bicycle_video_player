@@ -32,7 +32,10 @@ class TourController(VlcPlayer):
         self._last_movie_change_time = time.time() - 5
         self._movie_stopped_time = time.time()
         self._played_since_movie_reset = False
-
+        if self._player_number == 0:
+            self._movie_type = 'front_movie'
+        else:
+            self._movie_type = 'back_movie'
         self._load_all_scenes()
         self._active_player_id = 0
         self._set_active_scene(scene_name='default')
@@ -40,14 +43,9 @@ class TourController(VlcPlayer):
 
     def _load_all_scenes(self):
         self._logger.info('in _load_all_scenes')
-        if self._player_number == 0:
-            movie_type = 'front_movie'
-        else:
-            movie_type = 'back_movie'
-
         media_id = 0
         for scene_name, scene in cfg.SCENES.items():
-            file_name = cfg.SCENES[scene_name][movie_type]
+            file_name = cfg.SCENES[scene_name][self._movie_type]
             file_path = os.path.join(os.path.basename(os.path.dirname(os.path.realpath(__file__))), file_name)
             self._logger.info('loading scene: {}, file: {}, media_id: {}'.format(scene_name, file_name, media_id))
             self.load_movie(file=file_path, media_sel=media_id)
@@ -95,7 +93,8 @@ class TourController(VlcPlayer):
                     if t >= self._topography_keys[self._current_topography_index + 1]:  # we just passed to next topography
                         self._current_topography_index += 1
                         self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
-
+            file_path = os.path.join(os.path.basename(os.path.dirname(os.path.realpath(__file__))), cfg.SCENES[cfg.SCENES.keys()[self._active_player_id]][self._movie_type])
+            self.restart_ended_video(file_path, self._active_player_id)
             time.sleep(0.05)
 
     def _start_paused_movie(self):
@@ -155,6 +154,7 @@ class TourController(VlcPlayer):
             self._last_movie_change_time = time.time()
             self._loading_file = False
             self._played_since_movie_reset = True
+            self._movie_stopped_time = time.time()
 
     def update_encoder(self, player_id, encoder_data):
         self._logger.debug('in update_encoder, player_id= {}, encoder_data= {}'.format(player_id, encoder_data))
