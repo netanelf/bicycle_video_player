@@ -19,32 +19,40 @@ ENSURE that the timestamps are in order ie. time_ms3 >= time_ms2 >= time_ms
 """
 SCENES = {
     'default': {
-        'front_movie': 'JERUSALEM TRY 1.mp4',
-        'back_movie': 'JERUSALEM REAR NEW 3.7.mp4',
+        'front_movie': 'jerusalem_front.mp4',
+        'back_movie': 'jerusalem_back.mp4',
         'topography': {0: 1,
                        5000: 2,
                        12000: 0
                        }
     },
     'breman': {
-        'front_movie': 'BREMANFRONT.mp4',
-        'back_movie': 'BREMANREAR.mp4',
+        'front_movie': 'breman_front.mp4',
+        'back_movie': 'breman_back.mp4',
         'topography': {0: 1,
                        5000: 2,
                        12000: 0
                        }
     },
     'ottawa': {
-        'front_movie': 'ottawa_bicycle_daytime.mp4',
-        'back_movie': 'ottawa_bicycle_daytime.mp4',
+        'front_movie': 'ottawa_front.mp4',
+        'back_movie': 'ottawa_front.mp4',
         'topography': {0: 1,
                        5000: 2,
                        12000: 0
                        }
     },
     'napoli': {
-        'front_movie': 'NAPOLI.mp4',
-        'back_movie': 'NAPOLIrear.mp4',
+        'front_movie': 'napoli_front.mp4',
+        'back_movie': 'napoli_back.mp4',
+        'topography': {0: 1,
+                       5000: 2,
+                       12000: 0
+                       }
+    },
+    'ottawa_night': {
+        'front_movie': 'ottawa_night_front.mp4',
+        'back_movie': 'ottawa_night_front.mp4',
         'topography': {0: 1,
                        5000: 2,
                        12000: 0
