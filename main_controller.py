@@ -176,7 +176,7 @@ class SerialWriter(thread):
 
     def run(self):
         while True:
-            time.sleep(1)
+            time.sleep(0.05)
             try:
                 d = self.player.data_to_send.get()
                 self._logger.debug('got data to send: {}'.format(d))

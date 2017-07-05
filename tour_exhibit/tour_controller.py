@@ -90,6 +90,7 @@ class TourController(VlcPlayer):
                 self._logger.debug('time: {}'.format(t))
 
                 if self._current_topography_index + 1 < len(self._topography_keys) and self.is_playing(self._active_player_id) is True:
+                    self._logger.debug('next topography time: {}'.format(self._topography_keys[self._current_topography_index + 1]))
                     if t >= self._topography_keys[self._current_topography_index + 1]:  # we just passed to next topography
                         self._current_topography_index += 1
                         self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
