@@ -73,6 +73,7 @@ class TourController(VlcPlayer):
                     
                     if self._active_player_id == 0:
                         self.set_position(0)
+		        self._current_topography_index = -1
 
                     else:
                         self._active_player_id = 0
