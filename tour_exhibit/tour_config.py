@@ -75,25 +75,7 @@ SCENES = collections.OrderedDict([
      ),
     ('napoli', collections.OrderedDict([
                                         ('front_movie', 'napoli_front.mp4'),
-                                        ('back_movie', 'napoli_back.mp4'),
-                                        ('topography', collections.OrderedDict([
-                                                                                (0, 1),
-                                                                                (5000, 0),   
-                                                                                (10000, 1),
-                                                                                (20000, 0),
-                                                                                (30000, 2),
-                                                                                (40000, 0),
-                                                                                (50000, 0),
-                                                                                (60000, 1),
-                                                                                (70000, 0),
-                                                                                (80000, 1),
-                                                                                (90000, 2)
-                                                                               ]))
-                                       ])
-     ),
-    ('ottawa_night', collections.OrderedDict([
-                                        ('front_movie', 'ottawa_night_front.mp4'),
-                                        ('back_movie', 'ottawa_night_front.mp4'),
+                                        ('back_movie', 'napoli_front.mp4'),
                                         ('topography', collections.OrderedDict([
                                                                                 (0, 1),
                                                                                 (5000, 0),   

@@ -68,7 +68,7 @@ class TourController(VlcPlayer):
                 if self._speed <= cfg.SPEED_THRESHOLD and self.is_playing(self._active_player_id) is True:
                     self._start_gradual_stopping()
                 
-                if self.is_playing(self._active_player_id) is False and time.time() - self._movie_stopped_time > cfg.TIME_FOR_RETURN_TO_DEFAULT_SCENE and (self._active_player_id != 0 or self.get_time() > 100) and self._played_since_movie_reset:
+                if self.is_playing(self._active_player_id) is False and time.time() - self._movie_stopped_time > cfg.TIME_FOR_RETURN_TO_DEFAULT_SCENE and (self._active_player_id != 0 or self.get_time(self._active_player_id) > 100) and self._played_since_movie_reset:
                     self._logger.debug('bicicle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
                     
                     if self._active_player_id == 0:
@@ -86,7 +86,7 @@ class TourController(VlcPlayer):
                     self.pause(self._active_player_id)
                     self._logger.debug('returning to main loop')
 
-                t = self.get_time()
+                t = self.get_time(self._active_player_id)
                 self._logger.debug('time: {}'.format(t))
 
                 if self._current_topography_index + 1 < len(self._topography_keys) and self.is_playing(self._active_player_id) is True:
