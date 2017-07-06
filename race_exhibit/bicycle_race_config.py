@@ -13,9 +13,9 @@ BICYCLE_ICON_HORIZONTAL_OFFSET = -140    # offset of bicycle icon from bar end
 # Power Bar
 POWER_BAR_LOCATION = ((650, 100), (650, 800))
 
-SPEED_FACTOR = [6, 6, 3]
+SPEED_FACTOR = [10, 10, 3]
 
-SPEED_STATE_THRESHOLDS = range(0, 80, 3)  # speed threshold for power bars
+SPEED_STATE_THRESHOLDS = range(0, 123, 2)  # speed threshold for power bars
 
 # Currently not used (digits in power bar)
 POWER_DIGITS_SCALING = 1
