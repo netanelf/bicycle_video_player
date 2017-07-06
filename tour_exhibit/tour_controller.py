@@ -69,7 +69,7 @@ class TourController(VlcPlayer):
                     self._start_gradual_stopping()
                 
                 if self.is_playing(self._active_player_id) is False and time.time() - self._movie_stopped_time > cfg.TIME_FOR_RETURN_TO_DEFAULT_SCENE and (self._active_player_id != 0 or self.get_time(self._active_player_id) > 100) and self._played_since_movie_reset:
-                    self._logger.debug('bicicle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
+                    self._logger.debug('bicycle idle for {} time, returning to default scene'.format(time.time() - self._movie_stopped_time))
                     
                     if self._active_player_id == 0:
                         self.set_position(0)
@@ -95,7 +95,8 @@ class TourController(VlcPlayer):
                         self._current_topography_index += 1
                         self._set_topography(self._topography_struct[self._topography_keys[self._current_topography_index]])
             file_path = os.path.join(os.path.basename(os.path.dirname(os.path.realpath(__file__))), cfg.SCENES[cfg.SCENES.keys()[self._active_player_id]][self._movie_type])
-            self.restart_ended_video(file_path, self._active_player_id)
+            if (self.restart_ended_video(file_path, self._active_player_id)):
+		self._current_topography_index = -1
             time.sleep(0.05)
 
     def _start_paused_movie(self):

@@ -223,6 +223,9 @@ class VlcPlayer(thread):
         if self.mp[media_sel].get_state() == vlc.State.Ended:
             self.load_movie(file,media_sel)
             self.play(media_sel)
+	    return True
+	else:
+	    return False
 
     def set_fullscreen(self,val=True,media_sel=0):
         self.mp[media_sel].set_fullscreen(val)
