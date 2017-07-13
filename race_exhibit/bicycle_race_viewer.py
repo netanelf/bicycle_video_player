@@ -27,7 +27,7 @@ def timing_decorator(func):
 class BicycleRaceViewer(threading.Thread):
 
     @timing_decorator
-    def __init__(self, dir_name):
+    def __init__(self, dir_name = "bicycle_race_sample_pics"):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info('initializing {}'.format(self.__class__.__name__))
         super(BicycleRaceViewer, self).__init__()
@@ -35,9 +35,8 @@ class BicycleRaceViewer(threading.Thread):
 
         self._velocity = [0, 0]  # player1,player2
         self._target_velocity = [0, 0]  # player1,player2
-        #self._delta = [0, 0]  # TODO: update _velocity_update_delay_sec according to the difference between current velocity and target velicity
+        #self._delta = [0, 0]
         self._last_velocity_update_time = 0
-        self._velocity_update_delay_sec = 0  #0.001  # update velocity resolution
         self._velocity_update_delta_kms = 0.5  # 'kamash' step for velocity updates
 
         self._velocity_bars = [0, 0] #self._images_structures['bar_fill']
@@ -63,6 +62,9 @@ class BicycleRaceViewer(threading.Thread):
         self._record_date = strftime("%Y-%m-%d", gmtime())
         self._logger.info("data change {}".format(strftime("%Y-%m-%d %H:%M", gmtime())))
         self._daily_record = 0
+        self._last_arduino_velocity_update_time = [0, 0]
+        self._measured_arduino_intervals = [0, 0] # estimated- will be refined
+        self._frame_update_duration = 0.1 # estimated- will be refined
 
     # reads all images under a directory into _image_structures. Name convention to key is <root after dir_name>/<filename wo extention>
     # for example if we call _read_all_images(bicycle_race_sample_pics) then bicycle_race_sample_pics/digits/0.png will
@@ -148,9 +150,8 @@ class BicycleRaceViewer(threading.Thread):
         """
         self._logger.info('volocity updated by controller({}: {})'.format(player, new_velocity))
         self._target_velocity[player] = new_velocity
-        #self._delta[player] = abs(self._target_velocity[player] - self._velocity[player])
-        #self._logger.info([d + 1 for d in self._delta])
-        #self._velocity_update_delay_sec = 0.2 / max([d + 1 for d in self._delta])
+        self._measured_arduino_intervals[player] = time.time() - self._last_arduino_velocity_update_time[player]
+        self._last_arduino_velocity_update_time[player] = time.time()
         self._check_record(new_velocity)
 
     @timing_decorator
@@ -158,19 +159,16 @@ class BicycleRaceViewer(threading.Thread):
         """
         update current velocity by 1 step closer to target velocity
         velocity step size: self._velocity_update_delta_kms
-        update delta time: self._velocity_update_delay_sec
         :return:
         """
         # update self._velocity to next step
-        if time.time() - self._last_velocity_update_time > self._velocity_update_delay_sec:
-            for player in range(len(self._velocity)):
-                if self._target_velocity[player] > self._velocity[player]:
-                    self._velocity[player] = min(self._velocity[player] + self._velocity_update_delta_kms, self._target_velocity[player])
-                else:
-                    self._velocity[player] = max(self._velocity[player] - self._velocity_update_delta_kms, self._target_velocity[player])
+        for player in range(len(self._velocity)):
+            next_update_time = self._last_arduino_velocity_update_time[player] + self._measured_arduino_intervals[player]
+            remaining_updates = np.math.floor((next_update_time - time.time()) / self._frame_update_duration)
+            speed_current_to_target = self._target_velocity[player] - self._velocity[player]
+            self._velocity[player] += max(speed_current_to_target/max(remaining_updates,1),min(cfg.MIN_SPEED_STEP,speed_current_to_target))
 
-            self._logger.debug('new velocity: {}'.format(self._velocity))
-            self._last_velocity_update_time = time.time()
+        self._logger.debug('new velocity: {}'.format(self._velocity))
 
     @timing_decorator
     def _overlay(self, base_image, overlay_image, location):
@@ -405,32 +403,35 @@ class BicycleRaceViewer(threading.Thread):
 
         while self._running:
 
-            if self._target_velocity != self._velocity:
-                try:
-                    t0 = time.clock()
-                    self._displayed_image = np.copy(self._images_structures['Background'])
-                    self._update_current_velocity()
+            #if self._target_velocity != self._velocity:
+            try:
+                t0 = time.clock()
+                self._displayed_image = np.copy(self._images_structures['Background'])
+                self._update_current_velocity()
 
-                    self._update_power_bar()
+                self._update_power_bar()
 
-                    self._update_velocity_bar()
-                    t1 = time.clock()
-                    # show image
-                    cv2.imshow('display', self._displayed_image)
-                except Exception as ex:
-                    self._logger.error('got exception in main loop')
-                    self._logger.exception(ex)
-                t2 = time.clock()
+                self._update_velocity_bar()
+                t1 = time.clock()
+                # show image
+                cv2.imshow('display', self._displayed_image)
+            except Exception as ex:
+                self._logger.error('got exception in main loop')
+                self._logger.exception(ex)
+            t2 = time.clock()
 
-                image_preparation_time += (t1 - t0)
-                imshow_time += (t2 - t1)
+            image_preparation_time += (t1 - t0)
+            imshow_time += (t2 - t1)
+
             t3 = time.clock()
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             t4 = time.clock()
 
             waitkey_time += t4-t3
+            self._frame_update_duration = t4-t0
 
+        self._logger.info('frame_update_duration: {}'.format(self._frame_update_duration))
         self._logger.info('image_preparation_time: {}'.format(image_preparation_time))
         self._logger.info('imshow_time: {}'.format(imshow_time))
         self._logger.info('waitkey_time: {}'.format(waitkey_time))
@@ -452,20 +453,16 @@ if __name__ == '__main__':
     b.start()
     sleep(2)
     b._update_velocity(player=cfg.PLAYER_1, new_velocity=1)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=20)
     sleep(2)
-    b._update_velocity(player=cfg.PLAYER_1, new_velocity=30)
-    sleep(2)
-    b._update_velocity(player=cfg.PLAYER_2, new_velocity=1)
-    sleep(2)
-    b._update_velocity(player=cfg.PLAYER_2, new_velocity=30)
+    b._update_velocity(player=cfg.PLAYER_1, new_velocity=20)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=15)
     sleep(2)
     b._update_velocity(player=cfg.PLAYER_1, new_velocity=1)
-    sleep(2)
     b._update_velocity(player=cfg.PLAYER_2, new_velocity=1)
     sleep(2)
-    b._update_velocity(player=cfg.PLAYER_2, new_velocity=30)
-    sleep(2)
-    b._update_velocity(player=cfg.PLAYER_1, new_velocity=30)
+    b._update_velocity(player=cfg.PLAYER_1, new_velocity=2)
+    b._update_velocity(player=cfg.PLAYER_2, new_velocity=2)
     sleep(2)
     b.stop_viewer()
     sleep(1)
