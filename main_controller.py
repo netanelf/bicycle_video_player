@@ -49,6 +49,7 @@ class main_controller():
                 print port_try
                 (player, player_number) = self.get_player(s)
                 if not self.player:
+                    self._logger.info('creating player object')
                     self.player = player             
                     self.player.setDaemon(True)
                     self.player.start()
@@ -82,16 +83,16 @@ class main_controller():
 
         if (player_type == 1):
             from history_exhibit.history_controller import HistoryController
-            return (HistoryController(), player_number)
+            return (HistoryController(), player_number) if not self.player else (None, player_number)
         elif (player_type == 2):
             from tour_exhibit.tour_controller import TourController
-            return (TourController(player_number=player_number), player_number)
+            return (TourController(player_number=player_number), player_number) if not self.player else (None, player_number)
         elif (player_type == 3):
             from brake_exhibit.brake_controller import BrakeController
-            return (BrakeController(), player_number)
+            return (BrakeController(), player_number) if not self.player else (None, player_number)
         elif (player_type == 4):
             from race_exhibit.race_controller import RaceController
-            return (RaceController(), player_number)
+            return (RaceController(), player_number) if not self.player else (None, player_number)
         else:
             raise Exception('could not get identification from arduino')
 
