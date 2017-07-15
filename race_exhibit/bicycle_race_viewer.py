@@ -346,8 +346,9 @@ class BicycleRaceViewer(threading.Thread):
             for i in range(gradient_end):
                 bar_alpha[:, i] = int(i*255/gradient_end)
 
+            print('bar.shape {}'.format(bar.shape))
             masked_bar = np.dstack((bar, bar_alpha))
-
+            print('masked_bar.shape {}'.format(masked_bar.shape))
             self._displayed_image = self._overlay(base_image=self._displayed_image, overlay_image=masked_bar, location=location)
 
     @timing_decorator
@@ -381,8 +382,16 @@ class BicycleRaceViewer(threading.Thread):
             y_bar_loc = self._map_velocity_to_bar_location(velocity=self._velocity[player])
             y_icon_loc = y_bar_loc + cfg.BICYCLE_ICON_HORIZONTAL_OFFSET
             self._logger.debug("y_icon_loc {}".format(y_icon_loc))
+            rider_overlay = self._images_structures['Rider Icon']
+            height, width, alpha = rider_overlay.shape
+            rider_overlay_alpha = np.copy(rider_overlay[:,:,3])
+            masking_threshold = cfg.VELOCITY_BAR_LOCATION[player][1] - (y_bar_loc+cfg.BICYCLE_ICON_HORIZONTAL_OFFSET)
+            if (masking_threshold > 0):
+                rider_overlay_alpha[:,:masking_threshold] = 0
+            rider_overlay_masked=np.dstack((rider_overlay[:,:,:3],rider_overlay_alpha))
+            # rider_overlay = cv2.bitwise_and(rider_overlay, rider_overlay, mask=rider_overlay_mask)
             self._displayed_image = self._overlay(base_image=self._displayed_image,
-                                                  overlay_image=self._images_structures['Rider Icon'],
+                                                  overlay_image=rider_overlay_masked,
                                                   location=(x_icon_loc, y_icon_loc))
 
     @timing_decorator
