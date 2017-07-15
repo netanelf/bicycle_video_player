@@ -412,22 +412,25 @@ class BicycleRaceViewer(threading.Thread):
 
         while self._running:
 
-            # if self._target_velocity != self._velocity:
-            t0 = time.clock()
-            self._displayed_image = np.copy(self._images_structures['Background'])
-            self._update_current_velocity()
+            #if self._target_velocity != self._velocity:
+            try:
+                t0 = time.clock()
+                self._displayed_image = np.copy(self._images_structures['Background'])
+                self._update_current_velocity()
 
-            self._update_power_bar()
+                self._update_power_bar()
 
-            self._update_velocity_bar()
-            t1 = time.clock()
-            # show image
-            cv2.imshow('display', self._displayed_image)
+                self._update_velocity_bar()
+                t1 = time.clock()
+                # show image
+                cv2.imshow('display', self._displayed_image)
+            except Exception as ex:
+                self._logger.error('got exception in main loop')
+                self._logger.exception(ex)
             t2 = time.clock()
 
             image_preparation_time += (t1 - t0)
             imshow_time += (t2 - t1)
-            #end of if
 
             t3 = time.clock()
             if cv2.waitKey(1) & 0xFF == ord('q'):
