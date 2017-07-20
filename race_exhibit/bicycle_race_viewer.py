@@ -33,15 +33,12 @@ class BicycleRaceViewer(threading.Thread):
         super(BicycleRaceViewer, self).__init__()
         self._running = False
 
-        self._velocity = [0, 0]  # player1,player2
-        self._target_velocity = [0, 0]  # player1,player2
-        #self._delta = [0, 0]
-        self._last_velocity_update_time = 0
-        self._velocity_update_delta_kms = 0.5  # 'kamash' step for velocity updates
+        # Velocity related variables [player1,player2]
+        self._velocity = [0]*2  # Displayed velocity on bar - changes gradually towards _target_velocity
+        self._target_velocity = [0]*2  # Changes upon getting new value from Arduino
+        self._velocity_bars = [None]*2
 
-        self._velocity_bars = [0, 0] #self._images_structures['bar_fill']
-
-        # hold all images (icons, background etc.)
+        # Hold all images (icons, background etc.)
         self._images_structures = {}
         self._read_all_images(dir_name)
         self._create_on_the_fly_images()  # create structures for graphics with no image (like velocity bar)
@@ -57,7 +54,7 @@ class BicycleRaceViewer(threading.Thread):
         self._velocity_bar_max_pixel = cfg.VELOCITY_BAR_LOCATION[0][1] + cfg.VELOCITY_BAR_SIZE[1]
         self._velocity_bar_min_velocity = 0
         self._velocity_bar_max_velocity = 100
-        self._velocity_bar_gradient_end = 0.3  # percentage of visible bar that will have a gradient effect
+        self._velocity_bar_gradient_end = 0.3  # Percentage of visible bar that will have a gradient effect
 
         self._record_date = strftime("%Y-%m-%d", gmtime())
         self._logger.info("data change {}".format(strftime("%Y-%m-%d %H:%M", gmtime())))
@@ -95,23 +92,22 @@ class BicycleRaceViewer(threading.Thread):
     @timing_decorator
     def _create_on_the_fly_images(self):
         """
-        this function should create graphics that do not have image files (as the velocity bar)
+        This function should create graphics that do not have image files (as the velocity bar)
         :return:
         """
         self._logger.info('in _create_on_the_fly_images')
-        self._logger.debug('adding struct for velocity bar 1')
+        self._logger.debug('adding struct for velocity bar 0')
         v_bar1 = np.zeros(cfg.VELOCITY_BAR_SIZE)
         v_bar1[:, :, 0] = cfg.VELOCITY_BAR_1_COLOR[0]   # R
         v_bar1[:, :, 1] = cfg.VELOCITY_BAR_1_COLOR[1]   # G
         v_bar1[:, :, 2] = cfg.VELOCITY_BAR_1_COLOR[2]   # B
-
         self._velocity_bars[0] = v_bar1
 
-        self._logger.debug('adding struct for velocity bar 2')
+        self._logger.debug('adding struct for velocity bar 1')
         v_bar2 = np.zeros(cfg.VELOCITY_BAR_SIZE)
         v_bar2[:, :, 0] = cfg.VELOCITY_BAR_2_COLOR[0]   # R
         v_bar2[:, :, 1] = cfg.VELOCITY_BAR_2_COLOR[1]   # G
-        v_bar2[:, :, 2] = cfg.VELOCITY_BAR_2_COLOR[2]   # G
+        v_bar2[:, :, 2] = cfg.VELOCITY_BAR_2_COLOR[2]   # B
 
         self._velocity_bars[1] = v_bar2
 
@@ -158,7 +154,6 @@ class BicycleRaceViewer(threading.Thread):
     def _update_current_velocity(self):
         """
         update current velocity by 1 step closer to target velocity
-        velocity step size: self._velocity_update_delta_kms
         :return:
         """
         # update self._velocity to next step
@@ -277,14 +272,9 @@ class BicycleRaceViewer(threading.Thread):
             h, w = digit_img.shape[:2]
             num[:h, last_w:last_w + w] = digit_img
             last_w = last_w + w
-            # num = cv2.cvtColor(num, cv2.COLOR_GRAY2BGR)
 
         if scaling != 1:
             num = cv2.resize(num, None, fx=scaling, fy=scaling, interpolation=cv2.INTER_CUBIC)
-
-        # for result testing
-        # cv2.imshow("test", num)
-        # cv2.waitKey()
 
         return num
 
