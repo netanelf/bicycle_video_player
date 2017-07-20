@@ -11,14 +11,13 @@ BICYCLE_ICON_HORIZONTAL_OFFSET = -140    # offset of bicycle icon from bar end
 
 
 # Power Bar
+# ((player1_vertical,player1_horizontal),(player2_vertical,player2_horizontal)
 POWER_BAR_LOCATION = ((650, 100), (650, 800))
+SPEED_FACTOR = [10, 10] # Player 1, player 2
+SPEED_STATE_THRESHOLDS = range(0, 121, 2)  # Speed threshold for power bars
 
-SPEED_FACTOR = [10, 10, 3]
 
-SPEED_STATE_THRESHOLDS = range(0, 121, 2)  # speed threshold for power bars
-
-# Currently not used (digits in power bar)
-POWER_DIGITS_SCALING = 1
+POWER_DIGITS_SCALING = 1 # Currently not used (digits in power bar)
 POWER_BAR_DIGIT_OFFSET = [300, 300]
 SPEED_POWER_CONVERSION_FACTOR = 2  # power = speed * factor
 
