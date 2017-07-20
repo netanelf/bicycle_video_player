@@ -83,7 +83,7 @@ class TourController(VlcPlayer):
                         
                     self._played_since_movie_reset = False
                     self.play(self._active_player_id)
-                    time.sleep(5)
+                    time.sleep(1)
                     self.pause(self._active_player_id)
                     self._logger.debug('returning to main loop')
 

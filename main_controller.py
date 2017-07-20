@@ -284,7 +284,7 @@ def init_logging(log_name, logger_level):
 
 
 if __name__ == '__main__':
-    init_logging(log_name='main_controller', logger_level=logging.DEBUG)
+    init_logging(log_name='main_controller', logger_level=logging.INFO)
     m = main_controller()
     while m.player.is_alive():
         time.sleep(1)
