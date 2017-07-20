@@ -2,7 +2,6 @@ import time
 import threading
 import logging
 from bicycle_race_viewer import BicycleRaceViewer
-import serial
 import bicycle_race_config as cfg
 
 
@@ -17,20 +16,14 @@ class RaceController(threading.Thread):
         self._viewer = BicycleRaceViewer(dir_name)
         self._viewer.setDaemon(True)
         self._viewer.start()
-
-        #TODO:  this should be fixed in BicycleRaceViewer, if no initial speed is given nothing is shown
-        self._viewer._update_velocity(player=0, new_velocity=1)
-
         self._logger.info('finished init')
 
     def run(self):
         while True:
-            #instruction = self.read_serial_data()
-            #self.update_values(instruction)
             time.sleep(1)
 
     def update_encoder(self, player_id, encoder_delta):
-        new_velocity = encoder_delta / cfg.SPEED_FACTOR[player_id]  # TODO: this should come from configuration file
+        new_velocity = encoder_delta / cfg.SPEED_FACTOR[player_id]
         self.update_speed(player_id, new_velocity)
     
     def update_speed(self, player_id, speed):
