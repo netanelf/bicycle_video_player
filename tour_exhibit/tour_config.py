@@ -23,8 +23,7 @@ SCENES = collections.OrderedDict([
                                         ('front_movie', 'jerusalem_front.mp4'),
                                         ('back_movie', 'jerusalem_back.mp4'),
                                         ('topography', collections.OrderedDict([
-                                                                                (0, 1),
-                                                                                (5000, 0),   
+                                                                                (0, 1),   
                                                                                 (10000, 1),
                                                                                 (20000, 0),
                                                                                 (30000, 2),
@@ -93,7 +92,6 @@ SCENES = collections.OrderedDict([
                                         ('back_movie', 'breman_back.mp4'),
                                         ('topography', collections.OrderedDict([
                                                                                 (0, 1),
-                                                                                (5000, 0),   
                                                                                 (10000, 1),
                                                                                 (20000, 0),
                                                                                 (30000, 2),
@@ -162,7 +160,6 @@ SCENES = collections.OrderedDict([
                                         ('back_movie', 'ottawa_front.mp4'),
                                         ('topography', collections.OrderedDict([
                                                                                 (0, 1),
-                                                                                (5000, 0),   
                                                                                 (10000, 1),
                                                                                 (20000, 0),
                                                                                 (30000, 2),
@@ -231,7 +228,6 @@ SCENES = collections.OrderedDict([
                                         ('back_movie', 'napoli_front.mp4'),
                                         ('topography', collections.OrderedDict([
                                                                                 (0, 1),
-                                                                                (5000, 0),   
                                                                                 (10000, 1),
                                                                                 (20000, 0),
                                                                                 (30000, 2),
