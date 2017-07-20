@@ -136,12 +136,25 @@ class TourController(VlcPlayer):
             self._played_since_movie_reset = True
             self.play(media_sel=self._active_player_id)
             self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING, media_sel=self._active_player_id)
+
+            # if we start.
+            if self._topography_keys[self._current_topography_index] != self.topographies['MISHOR'] and \
+                            self._current_topography_index != -1:
+                self._logger.debug('going back to topography: {}'.format(self._topography_struct[self._topography_keys[self._current_topography_index]]))
+                self._set_topography(topography=self._topography_struct[self._topography_keys[self._current_topography_index]])
+
             self.update_speed(new_speed=1, media_sel=self._active_player_id)
         
     def _start_gradual_stopping(self):
         self._logger.info('in _start_gradual_stopping ')
         self.gradual_speed_change(steps=cfg.SPEED_DOWN_RAMPING, media_sel=self._active_player_id)
         self.pause(media_sel=self._active_player_id)
+
+        # if we stop we should stop the FAN etc.
+        if self._topography_struct[self._topography_keys[self._current_topography_index]] != self.topographies['MISHOR']:
+            self._logger.debug('setting to MISHOR (due to stopping of movement)')
+            self._set_topography(topography=self.topographies['MISHOR'])
+
         self._movie_stopped_time = time.time()
 
     def do_kaftor(self, kaftor_number):
@@ -183,7 +196,7 @@ def init_logging(log_name, logger_level):
 if __name__ == '__main__':
     from logging.handlers import RotatingFileHandler
     from datetime import datetime
-    # init_logging('tour_controller', logging.INFO)
+    init_logging('tour_controller', logging.INFO)
     p = TourController(player_number=0)
     p.setDaemon(True)
     p.start()
