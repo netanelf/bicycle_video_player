@@ -18,6 +18,9 @@ class BrakeController(VlcPlayer):
 
     def run(self):
         threshold_passed = False
+        self.play(self._cur_movie)
+        time.sleep(1)
+        self.pause(self._cur_movie)
         while self._alive:
             for key in sorted(cfg.THRESHOLD.keys(), reverse=True):
                 if self._encoder_data >= cfg.THRESHOLD[key]:
