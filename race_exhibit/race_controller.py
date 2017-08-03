@@ -24,6 +24,10 @@ class RaceController(threading.Thread):
 
     def update_encoder(self, player_id, encoder_delta):
         new_velocity = encoder_delta / cfg.SPEED_FACTOR[player_id]
+        if player_id in (0,2):
+            player_id = 0
+        elif player_id in (1,3):
+            player_id = 1
         self.update_speed(player_id, new_velocity)
     
     def update_speed(self, player_id, speed):
