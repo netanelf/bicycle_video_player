@@ -1,9 +1,11 @@
 MOVIE_FILENAME = "brakes.avi"
 
-THRESHOLD = {"SPEED_TH_1": 2,
-             "SPEED_TH_2": 4,
-             "SPEED_TH_3": 6,
-             "SPEED_TH_4": 8}
+MAX_VALUE = 15
+
+THRESHOLD = {"SPEED_TH_1": (1 * MAX_VALUE) / 5,
+             "SPEED_TH_2": (2 * MAX_VALUE) / 5,
+             "SPEED_TH_3": (3 * MAX_VALUE) / 5,
+             "SPEED_TH_4": (4 * MAX_VALUE) / 5 }
 
 VID_SPEED = {"SPEED_TH_1": 0.5,
              "SPEED_TH_2": 1.0,

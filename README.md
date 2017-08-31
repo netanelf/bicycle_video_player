@@ -52,15 +52,24 @@ arduino_0: 1000
 
 
 ## Race:
+
+### Donkey (two big bicycles)
 screen: 1
 
-bicycle: 3
+bicycle: 2
 
 arduino_0: 0111
 
 arduino_1: 0110
 
-arduino_2: 0101 # manual
+### Donkey-Foal (hand + small bicycle)
+screen: 1
+
+bicycle: 2
+
+arduino_2: 0101
+
+arduino_3: 0100
 
 
 

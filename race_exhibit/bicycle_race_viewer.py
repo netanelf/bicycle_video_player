@@ -336,9 +336,7 @@ class BicycleRaceViewer(threading.Thread):
             for i in range(gradient_end):
                 bar_alpha[:, i] = int(i*255/gradient_end)
 
-            print('bar.shape {}'.format(bar.shape))
             masked_bar = np.dstack((bar, bar_alpha))
-            print('masked_bar.shape {}'.format(masked_bar.shape))
             self._displayed_image = self._overlay(base_image=self._displayed_image, overlay_image=masked_bar, location=location)
 
     @timing_decorator
