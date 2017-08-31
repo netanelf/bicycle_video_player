@@ -13,7 +13,7 @@ BICYCLE_ICON_HORIZONTAL_OFFSET = -140    # offset of bicycle icon from bar end
 # Power Bar
 # ((player1_vertical,player1_horizontal),(player2_vertical,player2_horizontal)
 POWER_BAR_LOCATION = ((650, 100), (650, 800))
-SPEED_FACTOR = [10, 10, 16.3, 16.3] # Player 1, player 2 (DONKEY), player_3, player_4 (FOAL)
+SPEED_FACTOR = [10, 10, 8.9, 18.7] # Player 1, player 2 (DONKEY), player_3, player_4 (FOAL)
 SPEED_STATE_THRESHOLDS = range(0, 121, 2)  # Speed threshold for power bars
 
 
