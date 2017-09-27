@@ -9,7 +9,7 @@ sudo apt-get install python-serial -y
 sudo apt-get install vlc -y
 sudo usermod -a -G dialout $USER
 cd ~/
-git clone https://github.com/netanelf/bicycle_video_player
+git clone https://github.com/netanelf/bicycle_video_player -b v1.2
 cd ~/bicycle_video_player
 chmod +x achbar.sh
 mkdir ~/.config
