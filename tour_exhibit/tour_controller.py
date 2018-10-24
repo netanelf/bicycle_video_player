@@ -118,7 +118,7 @@ class TourController(VlcPlayer):
         :param topography:
         :return:
         """
-        self._logger.info('in _set_topography, topography: {}'.format(topography))
+        self._logger.debug('in _set_topography, topography: {}'.format(topography))
         if topography == self.topographies['DOWN_HILL']:
             self.data_to_send.put('load_0')
             self.data_to_send.put('fan_1')
@@ -132,7 +132,7 @@ class TourController(VlcPlayer):
             self._logger.error('unknown topography ({})'.format(topography))
 
     def _start_gradual_playing(self):
-            self._logger.info('in _start_gradual_playing ')
+            self._logger.debug('in _start_gradual_playing ')
             self._played_since_movie_reset = True
             self.play(media_sel=self._active_player_id)
             self.gradual_speed_change(steps=cfg.SPEED_UP_RAMPING, media_sel=self._active_player_id)
@@ -146,7 +146,7 @@ class TourController(VlcPlayer):
             self.update_speed(new_speed=1, media_sel=self._active_player_id)
         
     def _start_gradual_stopping(self):
-        self._logger.info('in _start_gradual_stopping ')
+        self._logger.debug('in _start_gradual_stopping ')
         self.gradual_speed_change(steps=cfg.SPEED_DOWN_RAMPING, media_sel=self._active_player_id)
         self.pause(media_sel=self._active_player_id)
 

@@ -144,7 +144,7 @@ class BicycleRaceViewer(threading.Thread):
         :param new_velocity: new velocity value
         :return:
         """
-        self._logger.info('volocity updated by controller({}: {})'.format(player, new_velocity))
+        self._logger.debug('volocity updated by controller({}: {})'.format(player, new_velocity))
         self._target_velocity[player] = new_velocity
         self._measured_arduino_intervals[player] = time.time() - self._last_arduino_velocity_update_time[player]
         self._last_arduino_velocity_update_time[player] = time.time()
@@ -442,8 +442,8 @@ class BicycleRaceViewer(threading.Thread):
         self._running = False
 
 if __name__ == '__main__':
-    from bicycle_player import init_logging
-    init_logging(logger_name='BicycleRaceViewer', logger_level=logging.DEBUG)
+    #from bicycle_player import init_logging
+    #init_logging(logger_name='BicycleRaceViewer', logger_level=logging.DEBUG)
     b = BicycleRaceViewer()
     b.setDaemon(True)
     t0 = time.clock()

@@ -37,7 +37,7 @@ class RaceController(threading.Thread):
         pass
 
 if __name__ == '__main__':
-    from bicycle_player import init_logging
+    #from bicycle_player import init_logging
     # init_logging(logger_name='BicycleRaceController', logger_level=logging.INFO)
 
     controller = RaceController("bicycle_race_sample_pics")

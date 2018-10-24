@@ -157,7 +157,7 @@ class SerialReader(thread):
                     raw_data.append(d)
 
             except Exception as ex:
-                self._logger.error(ex)
+                self._logger.debug(ex)
 
         self._logger.debug(raw_data)
 
