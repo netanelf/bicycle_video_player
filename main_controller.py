@@ -22,12 +22,12 @@ class main_controller():
     def __init__(self):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info('initiating main_controller')
-        serial_found = 0
+
         ports = self.get_serial_ports()
         
         self.player = None
-        self.serial_reader = {}
-        self.serial_writer = {}
+        self.serial_readers = {}
+        self.serial_writers = {}
         self.serial_connections = {}  # player_number: serial_conn
         for port_try in ports:
             print port_try
@@ -57,14 +57,14 @@ class main_controller():
                 
         if len(self.serial_connections) == 0:
             raise Exception("No Arduino detected!!")
-        
+
         for (conn_id, connection) in self.serial_connections.items():
-            self.serial_reader[conn_id] = SerialReader(self.player, conn_id, connection)
-            self.serial_writer[conn_id] = SerialWriter(self.player, conn_id, connection)
-            self.serial_reader[conn_id] .setDaemon(True)
-            self.serial_writer[conn_id] .setDaemon(True)
-            self.serial_reader[conn_id] .start()
-            self.serial_writer[conn_id] .start()
+            self.serial_readers[conn_id] = SerialReader(self.player, conn_id, connection)
+            self.serial_writers[conn_id] = SerialWriter(self.player, conn_id, connection)
+            self.serial_readers[conn_id] .setDaemon(True)
+            self.serial_writers[conn_id] .setDaemon(True)
+            self.serial_readers[conn_id] .start()
+            self.serial_writers[conn_id] .start()
 
     def get_player(self, serial_conn):
         print 'in get_player'
@@ -121,15 +121,18 @@ class main_controller():
         return result
 
 
+
+
 class SerialReader(thread):
     ENCODER = 0  #todo
     BUTTON  = 6  #todo
 
-    def __init__(self,player, conn_id, serial_connection):
+    def __init__(self, player, conn_id, serial_connection):
         self._logger = logging.getLogger(self.__class__.__name__)
         super(SerialReader, self).__init__()
         self.player = player
         self.conn_id = conn_id
+        self.errors = 0
         self.serial_connection = serial_connection
         self.serial_connection.flush()
         self._logger.info('initialized SerialReader')
@@ -144,7 +147,10 @@ class SerialReader(thread):
 
             if opid == self.BUTTON:
                 self.player.do_kaftor(int(''.join(data)))
-    
+
+            if self.errors > 10:
+                self.reopen_serial_connection()
+
     def read_serial_data(self, serial_conn):
         reading = True
         raw_data = []
@@ -155,9 +161,11 @@ class SerialReader(thread):
                     reading = False
                 elif d != '':
                     raw_data.append(d)
-
+                # zero out error counter
+                self.errors = 0
             except Exception as ex:
                 self._logger.debug(ex)
+                self.errors += 1
 
         self._logger.debug(raw_data)
 
@@ -165,6 +173,18 @@ class SerialReader(thread):
         data = raw_data[1:]
         self._logger.debug('op_id: {}, data: {}'.format(op_id, data))
         return op_id, data
+
+    def reopen_serial_connection(self):
+        self._logger.info('trying to reopen serial connection on port: {}'.format(self.serial_connection.name()))
+        try:
+            self.serial_connection.close()
+        except Exception as ex:
+            self._logger.exception('while closing, got exception: {}'.format(ex))
+
+        try:
+            self.serial_connection.open()
+        except Exception as ex:
+            self._logger.exception('while closing, got exception: {}'.format(ex))
 
 
 class SerialWriter(thread):
