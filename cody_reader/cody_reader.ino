@@ -77,7 +77,7 @@ void setup() {
   int bit2 = 4 * digitalRead(JUMPER_PIN_2);
   int bit3 = 8 * digitalRead(JUMPER_PIN_3);
 
-  DEVICE_ID = DEVICE_ID_MAP[bit0 + bit1 + bit2 + bit3];
+  DEVICE_ID = DEVICE_ID_MAP[7];
 
   // initialize timer1 
   noInterrupts();           // disable all interrupts
@@ -99,7 +99,7 @@ void loop() {
   }
 }
        
-void counter_write(byte op_id) {
+void counter_write(unsigned int op_id) {
   unsigned int temp_data;
   switch (op_id) {
   case CODER_0 : 

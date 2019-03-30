@@ -124,7 +124,7 @@ class main_controller():
 
 
 class SerialReader(thread):
-    ENCODER = 0  #todo
+    ENCODER = 0  #todocreating player object
     BUTTON  = 6  #todo
 
     def __init__(self, player, conn_id, serial_connection):
@@ -139,17 +139,23 @@ class SerialReader(thread):
 
     def run(self):
         while True:
-            opid, data = self.read_serial_data(serial_conn=self.serial_connection)
 
-            if opid == self.ENCODER:
-                encoder_delta = int(''.join(data))
-                self.player.update_encoder(self.conn_id, encoder_delta)
+            try:
+                opid, data = self.read_serial_data(serial_conn=self.serial_connection)
 
-            if opid == self.BUTTON:
-                self.player.do_kaftor(int(''.join(data)))
+                if opid == self.ENCODER:
+                    encoder_delta = int(''.join(data))
+                    self.player.update_encoder(self.conn_id, encoder_delta)
+
+                if opid == self.BUTTON:
+                    self.player.do_kaftor(int(''.join(data)))
+
+            except Exception as ex:
+                self._logger.error('ex:{}'.format(ex))
 
             if self.errors > 10:
                 self.reopen_serial_connection()
+                time.sleep(0.5)
 
     def read_serial_data(self, serial_conn):
         reading = True
@@ -164,8 +170,11 @@ class SerialReader(thread):
                 # zero out error counter
                 self.errors = 0
             except Exception as ex:
-                self._logger.debug(ex)
+                self._logger.exception(ex)
                 self.errors += 1
+                self._logger.error('serial read errors #: {}'.format(self.errors))
+                reading = False
+                time.sleep(0.1)
 
         self._logger.debug(raw_data)
 
@@ -175,7 +184,7 @@ class SerialReader(thread):
         return op_id, data
 
     def reopen_serial_connection(self):
-        self._logger.info('trying to reopen serial connection on port: {}'.format(self.serial_connection.name()))
+        self._logger.error('trying to reopen serial connection on port: {}'.format(self.serial_connection.name))
         try:
             self.serial_connection.close()
         except Exception as ex:
@@ -183,8 +192,12 @@ class SerialReader(thread):
 
         try:
             self.serial_connection.open()
+            time.sleep(0.1)
+            self._logger.info('serial connection was re-opened successfully')
         except Exception as ex:
-            self._logger.exception('while closing, got exception: {}'.format(ex))
+            self._logger.exception('while opening, got exception: {}'.format(ex))
+
+        self.errors = 0
 
 
 class SerialWriter(thread):
