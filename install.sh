@@ -8,7 +8,7 @@ fi
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 sudo apt update
-sudo apt install -y git python2 vlc htop
+sudo apt install -y git python2 vlc htop xautomation
 
 wget -qO- https://bootstrap.pypa.io/get-pip.py | sudo python2
 

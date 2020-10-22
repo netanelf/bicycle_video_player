@@ -2,4 +2,4 @@
 
 cd /home/mada/bicycle_video_player
 ./achbar.sh &
-python main_controller.py
+python2 main_controller.py
